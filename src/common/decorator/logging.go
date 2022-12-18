@@ -16,8 +16,9 @@ func (d commandLoggingDecorator[C]) Handle(ctx context.Context, cmd C) (err erro
 	handlerType := generateActionName(cmd)
 
 	logger := d.logger.WithFields(logrus.Fields{
-		"command":      handlerType,
-		"command_body": fmt.Sprintf("%#v", cmd),
+		"command": handlerType,
+		// TODO: Uncomment once have a way to filter out sensitive data
+		//"command_body": fmt.Sprintf("%#v", cmd),
 	})
 
 	logger.Debug("Executing command")
@@ -25,6 +26,7 @@ func (d commandLoggingDecorator[C]) Handle(ctx context.Context, cmd C) (err erro
 		if err == nil {
 			logger.Info("Command executed successfully")
 		} else {
+			// TODO: Do not log error if validation error
 			logger.WithError(err).Error("Failed to execute command")
 		}
 	}()

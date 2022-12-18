@@ -20,6 +20,7 @@ func (s *HttpServer) RegisterUser(c *gin.Context) {
 	var user registerUserRequest
 	if err := c.BindJSON(&user); err != nil {
 		s.application.Logger.Error(err)
+		// TODO: Create error DTO in common to reuse here
 		c.IndentedJSON(http.StatusBadRequest, struct{ Error string }{Error: "invalid JSON"})
 		return
 	}

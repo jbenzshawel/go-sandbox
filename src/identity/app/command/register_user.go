@@ -44,6 +44,7 @@ func NewRegisterUserHandler(
 func (h registerUserHandler) Handle(ctx context.Context, cmd RegisterUser) error {
 	// TODO: Create some sort of config driven password validator
 	if cmd.Password != cmd.ConfirmPassword {
+		// TODO: Create validation error type and return
 		return errors.New("password and confirm password must match")
 	}
 
