@@ -3,13 +3,14 @@ package command
 import (
 	"context"
 	"errors"
-	"github.com/google/uuid"
-	"golang.org/x/crypto/bcrypt"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/jbenzshawel/go-sandbox/common/decorator"
 	"github.com/jbenzshawel/go-sandbox/identity/domain"
-	"github.com/sirupsen/logrus"
 )
 
 type RegisterUser struct {

@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
+
 	"github.com/jbenzshawel/go-sandbox/identity/app"
 	"github.com/jbenzshawel/go-sandbox/identity/handlers"
 )
