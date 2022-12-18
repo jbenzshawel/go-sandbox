@@ -2,13 +2,13 @@ package command
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
 
+	"github.com/jbenzshawel/go-sandbox/common/cerror"
 	"github.com/jbenzshawel/go-sandbox/common/decorator"
 	"github.com/jbenzshawel/go-sandbox/identity/domain"
 )
@@ -44,8 +44,9 @@ func NewRegisterUserHandler(
 func (h registerUserHandler) Handle(ctx context.Context, cmd RegisterUser) error {
 	// TODO: Create some sort of config driven password validator
 	if cmd.Password != cmd.ConfirmPassword {
-		// TODO: Create validation error type and return
-		return errors.New("password and confirm password must match")
+		return cerror.NewValidationError("Invalid request",
+			map[string]string{"confirmPassword": "password and confirm password must match"},
+		)
 	}
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(cmd.Password), bcrypt.DefaultCost)

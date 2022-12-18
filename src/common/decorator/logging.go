@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"github.com/sirupsen/logrus"
+
+	"github.com/jbenzshawel/go-sandbox/common/cerror"
 )
 
 type commandLoggingDecorator[C any] struct {
@@ -25,8 +27,9 @@ func (d commandLoggingDecorator[C]) Handle(ctx context.Context, cmd C) (err erro
 	defer func() {
 		if err == nil {
 			logger.Info("Command executed successfully")
+		} else if _, ok := err.(cerror.ValidationError); ok {
+			logger.WithError(err).Info("Command executed successfully with validation error")
 		} else {
-			// TODO: Do not log error if validation error
 			logger.WithError(err).Error("Failed to execute command")
 		}
 	}()

@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/jbenzshawel/go-sandbox/common/cerror"
 	"github.com/jbenzshawel/go-sandbox/identity/app/command"
 )
 
@@ -20,8 +21,7 @@ func (s *HttpServer) RegisterUser(c *gin.Context) {
 	var user registerUserRequest
 	if err := c.BindJSON(&user); err != nil {
 		s.application.Logger.Error(err)
-		// TODO: Create error DTO in common to reuse here
-		c.IndentedJSON(http.StatusBadRequest, struct{ Error string }{Error: "invalid JSON"})
+		c.IndentedJSON(http.StatusBadRequest, cerror.NewValidationError("invalid JSON", nil))
 		return
 	}
 
@@ -33,8 +33,7 @@ func (s *HttpServer) RegisterUser(c *gin.Context) {
 		ConfirmPassword: user.ConfirmPassword,
 	})
 	if err != nil {
-		s.application.Logger.Error(err)
-		c.IndentedJSON(http.StatusBadRequest, struct{ Error string }{Error: err.Error()})
+		cerror.HandleValidationError(c, err)
 		return
 	}
 
