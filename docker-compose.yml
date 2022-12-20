@@ -1,5 +1,18 @@
 version: "3.9"
 services:
+  identity:
+    build:
+      context: docker/app
+    volumes:
+      - ./src:/src
+    working_dir: /src/identity
+    ports:
+      - "127.0.0.1:3002:3000"
+    environment:
+      IDENTITY_POSTGRES: "host=db port=5432 user=postgres password=postgres dbname=identity sslmode=disable"
+      HTTP_PORT: 3000
+    depends_on:
+      - flyway
   flyway:
     image: flyway/flyway
     command: -url=jdbc:postgresql://db:5432/identity -user=postgres -password=postgres migrate

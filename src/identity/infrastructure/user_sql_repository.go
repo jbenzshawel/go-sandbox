@@ -1,30 +1,27 @@
 package infrastructure
 
 import (
-	"database/sql"
-
 	. "github.com/go-jet/jet/v2/postgres"
 	"github.com/google/uuid"
 
+	"github.com/jbenzshawel/go-sandbox/common/database"
 	"github.com/jbenzshawel/go-sandbox/identity/domain"
 	"github.com/jbenzshawel/go-sandbox/identity/infrastructure/gen/identity/identity/model"
 	. "github.com/jbenzshawel/go-sandbox/identity/infrastructure/gen/identity/identity/table"
 )
 
-type DbConnectionFactory func() (*sql.DB, error)
-
 type UserSqlRepository struct {
-	dbConnection DbConnectionFactory
+	dbProvider database.DbProvider
 }
 
-func NewUserSqlRepository(dbConnection func() (*sql.DB, error)) *UserSqlRepository {
+func NewUserSqlRepository(dbProvider database.DbProvider) *UserSqlRepository {
 	return &UserSqlRepository{
-		dbConnection: dbConnection,
+		dbProvider: dbProvider,
 	}
 }
 
 func (r *UserSqlRepository) CreateUser(user domain.User, password string) (err error) {
-	_, err = executeInsert(r.dbConnection, Users.INSERT(Users.MutableColumns).
+	_, err = database.ExecuteInsert(r.dbProvider, Users.INSERT(Users.MutableColumns).
 		MODEL(model.Users{
 			UUID:          user.UUID,
 			FirstName:     user.FirstName,
@@ -57,7 +54,7 @@ func (r *UserSqlRepository) GetUserByUUID(uuid uuid.UUID) (*domain.User, error) 
 
 func (r *UserSqlRepository) queryForUser(stmt SelectStatement) (*domain.User, error) {
 	var users []model.Users
-	err := query[*[]model.Users](r.dbConnection, stmt, &users)
+	err := database.Query(r.dbProvider, stmt, &users)
 	if err != nil {
 		return nil, err
 	}
@@ -80,33 +77,4 @@ func mapToDomain(user model.Users) *domain.User {
 		CreatedAt:     user.CreatedAt,
 		LastUpdatedAt: user.LastUpdatedAt,
 	}
-}
-
-// TODO: Move this to shared library/embedded struct?
-func query[T any](dbConnection DbConnectionFactory, stmt SelectStatement, result T) (err error) {
-	db, err := dbConnection()
-	if err != nil {
-		return err
-	}
-	defer func() {
-		err = db.Close()
-	}()
-
-	err = stmt.Query(db, result)
-
-	return err
-}
-
-func executeInsert(dbConnection DbConnectionFactory, stmt InsertStatement) (sql.Result, error) {
-	db, err := dbConnection()
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		err = db.Close()
-	}()
-
-	result, err := stmt.Exec(db)
-
-	return result, err
 }

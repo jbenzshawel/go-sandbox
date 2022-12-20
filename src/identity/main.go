@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+
 	"github.com/gin-gonic/gin"
 
 	"github.com/jbenzshawel/go-sandbox/identity/app"
@@ -14,5 +16,8 @@ func main() {
 	router := gin.Default()
 	router.POST("/register", httpServer.RegisterUser)
 
-	router.Run("localhost:8080") // TODO: Get port from environment variables
+	err := router.Run(":" + os.Getenv("HTTP_PORT"))
+	if err != nil {
+		panic(err)
+	}
 }
