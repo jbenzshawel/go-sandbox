@@ -1,5 +1,9 @@
 package domain
 
+import "github.com/google/uuid"
+
 type UserRepository interface {
-	RegisterUser(user User, password string) error
+	CreateUser(user User, password string) error
+	GetUserByEmail(email string) (*User, error)
+	GetUserByUUID(uuid uuid.UUID) (*User, error)
 }

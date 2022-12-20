@@ -2,6 +2,7 @@ package command
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -43,10 +44,22 @@ func NewRegisterUserHandler(
 
 func (h registerUserHandler) Handle(ctx context.Context, cmd RegisterUser) error {
 	// TODO: Create some sort of config driven password validator
+	validationErrors := map[string]string{}
 	if cmd.Password != cmd.ConfirmPassword {
-		return cerror.NewValidationError("Invalid request",
-			map[string]string{"confirmPassword": "password and confirm password must match"},
-		)
+		validationErrors["confirmPassword"] = "password and confirm password must match"
+	}
+
+	existingUser, err := h.userRepo.GetUserByEmail(cmd.Email)
+	if err != nil {
+		return err
+	}
+
+	if existingUser != nil {
+		validationErrors["email"] = fmt.Sprintf("user with email %s already exists", cmd.Email)
+	}
+
+	if len(validationErrors) > 0 {
+		return cerror.NewValidationError("Invalid request", validationErrors)
 	}
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(cmd.Password), bcrypt.DefaultCost)
@@ -55,7 +68,7 @@ func (h registerUserHandler) Handle(ctx context.Context, cmd RegisterUser) error
 	}
 
 	user := domain.User{
-		UUID:          uuid.New().String(),
+		UUID:          uuid.New(),
 		FirstName:     cmd.FirstName,
 		LastName:      cmd.LastName,
 		Email:         cmd.Email,
@@ -63,7 +76,7 @@ func (h registerUserHandler) Handle(ctx context.Context, cmd RegisterUser) error
 		CreatedAt:     time.Now(),
 		LastUpdatedAt: time.Now(),
 	}
-	err = h.userRepo.RegisterUser(user, string(hash))
+	err = h.userRepo.CreateUser(user, string(hash))
 	if err != nil {
 		return err
 	}
