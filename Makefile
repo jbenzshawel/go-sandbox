@@ -16,6 +16,10 @@ go-tidy: # run go mod tidy for each go module
 go-test: # run go unit tests each go module
 	@./scripts/go-test.sh
 
-.PHONY: run-docker 
-run-docker: # run web services in docker
+.PHONY: docker-up 
+docker-up: # run web services in docker
 	docker compose up -d --build
+
+.PHONY: docker-down 
+docker-down: # stop web services in docker
+	docker compose down
