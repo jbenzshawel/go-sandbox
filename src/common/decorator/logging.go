@@ -15,10 +15,8 @@ type commandLoggingDecorator[C any] struct {
 }
 
 func (d commandLoggingDecorator[C]) Handle(ctx context.Context, cmd C) (err error) {
-	handlerType := generateActionName(cmd)
-
 	logger := d.logger.WithFields(logrus.Fields{
-		"command": handlerType,
+		"command": generateActionName(cmd),
 		// TODO: Uncomment once have a way to filter out sensitive data
 		//"command_body": fmt.Sprintf("%#v", cmd),
 	})

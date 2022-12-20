@@ -6,12 +6,12 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/jbenzshawel/go-sandbox/identity/app"
-	"github.com/jbenzshawel/go-sandbox/identity/handlers"
+	"github.com/jbenzshawel/go-sandbox/identity/rest"
 )
 
 func main() {
 	application := app.NewApplication()
-	httpServer := handlers.NewHttpServer(application)
+	httpServer := rest.NewHttpServer(application)
 
 	router := gin.Default()
 	router.POST("/register", httpServer.RegisterUser)
