@@ -3,11 +3,12 @@ package decorator
 import (
 	"context"
 	"errors"
+	"testing"
+
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 type stubQuery struct {
