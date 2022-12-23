@@ -9,7 +9,7 @@ services:
     ports:
       - "127.0.0.1:3002:3000"
     environment:
-      IDENTITY_POSTGRES: "host=db port=5432 user=postgres password=postgres dbname=identity sslmode=disable"
+      IDENTITY_POSTGRES: "host=db port=5432 user=identity password=dockerdbpw dbname=identity sslmode=disable"
       HTTP_PORT: 3000
     depends_on:
       - flyway
@@ -20,6 +20,23 @@ services:
       - ./sql/identity:/flyway/sql
     depends_on:
       - db
+  keycloak:
+      build:
+        context: docker/keycloak
+      environment:
+        KC_HEALTH_ENABLED: true
+        KC_METRICS_ENABLED: true
+        KC_DB: postgres
+        KC_DB_URL: jdbc:postgresql://db:5432/keycloak
+        KC_DB_USERNAME: keycloak
+        KC_DB_PASSWORD: dockerdbpw
+        KC_HOSTNAME: localhost
+        KEYCLOAK_ADMIN: admin
+        KEYCLOAK_ADMIN_PASSWORD: K3YCL04K!p@55w0RD
+      ports:
+        - 8080:8080
+      depends_on:
+        - db
   db:
     image: postgres:15.1-alpine
     restart: always
