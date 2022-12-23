@@ -27,15 +27,15 @@ type registerUserResponse struct {
 	Email     string    `json:"email"`
 }
 
-func (s *HttpServer) RegisterUser(c *gin.Context) {
+func (s *HttpServer) RegisterUser(ctx *gin.Context) {
 	var user registerUserRequest
-	if err := c.BindJSON(&user); err != nil {
+	if err := ctx.BindJSON(&user); err != nil {
 		s.application.Logger.Error(err)
-		c.IndentedJSON(http.StatusBadRequest, cerror.NewValidationError("invalid JSON", nil))
+		ctx.IndentedJSON(http.StatusBadRequest, cerror.NewValidationError("invalid JSON", nil))
 		return
 	}
 
-	err := s.application.Commands.RegisterUser.Handle(c, command.RegisterUser{
+	err := s.application.Commands.RegisterUser.Handle(ctx, command.RegisterUser{
 		FirstName:       user.FirstName,
 		LastName:        user.LastName,
 		Email:           user.Email,
@@ -43,17 +43,17 @@ func (s *HttpServer) RegisterUser(c *gin.Context) {
 		ConfirmPassword: user.ConfirmPassword,
 	})
 	if err != nil {
-		cerror.HandleValidationError(c, err)
+		cerror.HandleValidationError(ctx, err)
 		return
 	}
 
-	createdUser, err := s.application.Queries.UserByEmail.Handle(c, query.UserByEmail{Email: user.Email})
+	createdUser, err := s.application.Queries.UserByEmail.Handle(ctx, query.UserByEmail{Email: user.Email})
 	if err != nil {
-		cerror.HandleValidationError(c, err)
+		cerror.HandleValidationError(ctx, err)
 		return
 	}
 
-	c.IndentedJSON(http.StatusCreated, &registerUserResponse{
+	ctx.IndentedJSON(http.StatusCreated, &registerUserResponse{
 		ID:        createdUser.ID,
 		UUID:      createdUser.UUID,
 		FirstName: createdUser.FirstName,

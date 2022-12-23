@@ -1,4 +1,4 @@
-package infrastructure
+package storage
 
 import (
 	"fmt"
@@ -23,15 +23,15 @@ func TestUserRepository(t *testing.T) {
 		t.Run(r.name, func(t *testing.T) {
 			t.Parallel()
 
-			t.Run("testCreateUser", func(t *testing.T) {
+			t.Run("testInsertUser", func(t *testing.T) {
 				t.Parallel()
-				testCreateUser(t, r.repository)
+				testInsertUser(t, r.repository)
 			})
 		})
 	}
 }
 
-func testCreateUser(t *testing.T, userRepository domain.UserRepository) {
+func testInsertUser(t *testing.T, userRepository domain.UserRepository) {
 	t.Helper()
 
 	user := domain.User{
@@ -43,7 +43,7 @@ func testCreateUser(t *testing.T, userRepository domain.UserRepository) {
 		CreatedAt:     time.Now().In(&time.Location{}),
 		LastUpdatedAt: time.Now().In(&time.Location{}),
 	}
-	err := userRepository.CreateUser(user, uuid.New().String())
+	err := userRepository.InsertUser(user)
 	require.NoError(t, err)
 
 	createdUser, err := userRepository.GetUserByUUID(user.UUID)

@@ -1,4 +1,4 @@
-package infrastructure
+package storage
 
 import (
 	"sync"
@@ -22,7 +22,7 @@ func NewUserMemoryRepository() *UserMemoryRepository {
 	}
 }
 
-func (r *UserMemoryRepository) CreateUser(user domain.User, password string) error {
+func (r *UserMemoryRepository) InsertUser(user domain.User) error {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 

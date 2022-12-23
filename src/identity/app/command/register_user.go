@@ -5,13 +5,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
-	"github.com/sirupsen/logrus"
-	"golang.org/x/crypto/bcrypt"
+	"github.com/jbenzshawel/go-sandbox/identity/infrastructure/idp"
 
 	"github.com/jbenzshawel/go-sandbox/common/cerror"
 	"github.com/jbenzshawel/go-sandbox/common/decorator"
 	"github.com/jbenzshawel/go-sandbox/identity/domain"
+	"github.com/sirupsen/logrus"
 )
 
 type RegisterUser struct {
@@ -25,11 +24,13 @@ type RegisterUser struct {
 type RegisterUserHandler decorator.CommandHandler[RegisterUser]
 
 type registerUserHandler struct {
-	userRepo domain.UserRepository
+	userRepo         domain.UserRepository
+	identityProvider idp.IdentityProvider
 }
 
 func NewRegisterUserHandler(
 	userRepo domain.UserRepository,
+	identityProvider idp.IdentityProvider,
 	logger *logrus.Entry,
 ) RegisterUserHandler {
 	if userRepo == nil {
@@ -37,7 +38,10 @@ func NewRegisterUserHandler(
 	}
 
 	return decorator.ApplyCommandDecorators[RegisterUser](
-		registerUserHandler{userRepo: userRepo},
+		registerUserHandler{
+			userRepo:         userRepo,
+			identityProvider: identityProvider,
+		},
 		logger,
 	)
 }
@@ -62,13 +66,7 @@ func (h registerUserHandler) Handle(ctx context.Context, cmd RegisterUser) error
 		return cerror.NewValidationError("Invalid request", validationErrors)
 	}
 
-	hash, err := bcrypt.GenerateFromPassword([]byte(cmd.Password), bcrypt.DefaultCost)
-	if err != nil {
-		return err
-	}
-
 	user := domain.User{
-		UUID:          uuid.New(),
 		FirstName:     cmd.FirstName,
 		LastName:      cmd.LastName,
 		Email:         cmd.Email,
@@ -76,7 +74,14 @@ func (h registerUserHandler) Handle(ctx context.Context, cmd RegisterUser) error
 		CreatedAt:     time.Now(),
 		LastUpdatedAt: time.Now(),
 	}
-	err = h.userRepo.CreateUser(user, string(hash))
+
+	userUUID, err := h.identityProvider.CreateUser(ctx, user, cmd.Password)
+	if err != nil {
+		return err
+	}
+	user.UUID = userUUID
+
+	err = h.userRepo.InsertUser(user)
 	if err != nil {
 		return err
 	}

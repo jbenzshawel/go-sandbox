@@ -16,6 +16,10 @@ go-tidy: # run go mod tidy for each go module
 go-test: # run go unit tests each go module
 	@./scripts/go-test.sh
 
+.PHONY: jet-identity 
+jet-identity: # scaffold identity db tables for go db access
+	@./scripts/jet-identity.sh
+
 .PHONY: docker-up 
 docker-up: # run web services in docker
 	docker compose up -d --build

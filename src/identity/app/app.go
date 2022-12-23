@@ -1,13 +1,16 @@
 package app
 
 import (
+	"os"
+
+	"github.com/jbenzshawel/go-sandbox/identity/infrastructure/idp"
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 
 	"github.com/jbenzshawel/go-sandbox/identity/app/command"
 	"github.com/jbenzshawel/go-sandbox/identity/app/query"
 	"github.com/jbenzshawel/go-sandbox/identity/domain"
-	"github.com/jbenzshawel/go-sandbox/identity/infrastructure"
+	"github.com/jbenzshawel/go-sandbox/identity/infrastructure/storage"
 )
 
 type Application struct {
@@ -27,10 +30,11 @@ type Queries struct {
 func NewApplication() Application {
 	logger := logrus.NewEntry(logrus.StandardLogger())
 	userRepo := getUserRepo()
+	identityProvider := getIdentityProvider()
 
 	return Application{
 		Commands: Commands{
-			RegisterUser: command.NewRegisterUserHandler(userRepo, logger),
+			RegisterUser: command.NewRegisterUserHandler(userRepo, identityProvider, logger),
 		},
 		Queries: Queries{
 			UserByEmail: query.NewUserByEmailHandler(userRepo, logger),
@@ -40,9 +44,18 @@ func NewApplication() Application {
 }
 
 func getUserRepo() domain.UserRepository {
-	if userSqlRepo, ok := infrastructure.TryCreateUserSqlRepository(); ok {
+	if userSqlRepo, ok := storage.TryCreateUserSqlRepository(); ok {
 		return userSqlRepo
 	}
 
-	return infrastructure.NewUserMemoryRepository()
+	return storage.NewUserMemoryRepository()
+}
+
+func getIdentityProvider() idp.IdentityProvider {
+	return idp.NewKeyCloakProvider(
+		os.Getenv("IDP_BASE_PATH"),
+		os.Getenv("IDP_ADMIN_USER"),
+		os.Getenv("IDP_ADMIN_PASSWORD"),
+		os.Getenv("IDP_REALM"),
+	)
 }

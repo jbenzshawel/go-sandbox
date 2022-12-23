@@ -1,4 +1,4 @@
-package infrastructure
+package storage
 
 import (
 	"database/sql"
@@ -33,14 +33,13 @@ func TryCreateUserSqlRepository() (*UserSqlRepository, bool) {
 	return nil, false
 }
 
-func (r *UserSqlRepository) CreateUser(user domain.User, password string) (err error) {
+func (r *UserSqlRepository) InsertUser(user domain.User) (err error) {
 	_, err = database.ExecuteInsert(r.dbProvider, Users.INSERT(Users.MutableColumns).
 		MODEL(model.Users{
 			UUID:          user.UUID,
 			FirstName:     user.FirstName,
 			LastName:      user.LastName,
 			Email:         user.Email,
-			Password:      password,
 			Enabled:       user.Enabled,
 			CreatedAt:     user.CreatedAt,
 			LastUpdatedAt: user.LastUpdatedAt,
