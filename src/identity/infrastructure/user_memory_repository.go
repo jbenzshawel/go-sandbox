@@ -1,7 +1,6 @@
 package infrastructure
 
 import (
-	"fmt"
 	"sync"
 
 	"github.com/google/uuid"
@@ -10,14 +9,16 @@ import (
 )
 
 type UserMemoryRepository struct {
-	users map[string]domain.User
-	lock  *sync.RWMutex
+	users  map[string]domain.User
+	lock   *sync.RWMutex
+	lastId int32
 }
 
 func NewUserMemoryRepository() *UserMemoryRepository {
 	return &UserMemoryRepository{
-		users: map[string]domain.User{},
-		lock:  &sync.RWMutex{},
+		users:  map[string]domain.User{},
+		lock:   &sync.RWMutex{},
+		lastId: 0,
 	}
 }
 
@@ -25,10 +26,8 @@ func (r *UserMemoryRepository) CreateUser(user domain.User, password string) err
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
-	if _, exists := r.users[user.Email]; exists {
-		return fmt.Errorf("user with email %s already exists", user.Email)
-	}
-
+	r.lastId++
+	user.ID = r.lastId
 	r.users[user.Email] = user
 
 	return nil

@@ -1,9 +1,6 @@
 package app
 
 import (
-	"database/sql"
-	"os"
-
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 
@@ -43,11 +40,8 @@ func NewApplication() Application {
 }
 
 func getUserRepo() domain.UserRepository {
-	connectionString, ok := os.LookupEnv("IDENTITY_POSTGRES")
-	if ok {
-		return infrastructure.NewUserSqlRepository(func() (*sql.DB, error) {
-			return sql.Open("postgres", connectionString)
-		})
+	if userSqlRepo, ok := infrastructure.TryCreateUserSqlRepository(); ok {
+		return userSqlRepo
 	}
 
 	return infrastructure.NewUserMemoryRepository()
