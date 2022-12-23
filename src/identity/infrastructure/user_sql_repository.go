@@ -67,7 +67,6 @@ func (r *UserSqlRepository) GetUserByUUID(uuid uuid.UUID) (*domain.User, error) 
 
 func (r *UserSqlRepository) queryForUser(stmt SelectStatement) (*domain.User, error) {
 	var users []model.Users
-	println(stmt.DebugSql())
 	err := database.Query(r.dbProvider, stmt, &users)
 	if err != nil {
 		return nil, err
