@@ -11,6 +11,7 @@ import (
 
 type IdentityProvider interface {
 	CreateUser(ctx context.Context, user domain.User, password string) (uuid.UUID, error)
+	DeleteUser(ctx context.Context, userID string) error
 }
 
 type KeyCloakProvider struct {
@@ -30,7 +31,7 @@ func NewKeyCloakProvider(basePath, user, password, realm string) *KeyCloakProvid
 }
 
 func (idp *KeyCloakProvider) CreateUser(ctx context.Context, user domain.User, password string) (uuid.UUID, error) {
-	token, err := idp.getToken(ctx)
+	jwt, err := idp.getToken(ctx)
 	if err != nil {
 		return uuid.Nil, err
 	}
@@ -43,7 +44,7 @@ func (idp *KeyCloakProvider) CreateUser(ctx context.Context, user domain.User, p
 		Username:  gocloak.StringP(user.Email),
 	}
 
-	idpUserID, err := idp.client.CreateUser(ctx, token.AccessToken, idp.realm, idpUser)
+	idpUserID, err := idp.client.CreateUser(ctx, jwt.AccessToken, idp.realm, idpUser)
 	if err != nil {
 		return uuid.Nil, err
 	}
@@ -53,12 +54,21 @@ func (idp *KeyCloakProvider) CreateUser(ctx context.Context, user domain.User, p
 		return uuid.Nil, err
 	}
 
-	err = idp.client.SetPassword(ctx, token.AccessToken, idpUserID, idp.realm, password, false)
+	err = idp.client.SetPassword(ctx, jwt.AccessToken, idpUserID, idp.realm, password, false)
 	if err != nil {
 		return uuid.Nil, err
 	}
 
 	return userUUID, nil
+}
+
+func (idp *KeyCloakProvider) DeleteUser(ctx context.Context, userID string) error {
+	jwt, err := idp.getToken(ctx)
+	if err != nil {
+		return err
+	}
+
+	return idp.client.DeleteUser(ctx, jwt.AccessToken, idp.realm, userID)
 }
 
 func (idp *KeyCloakProvider) getToken(ctx context.Context) (*gocloak.JWT, error) {

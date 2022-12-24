@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jbenzshawel/go-sandbox/identity/infrastructure/idp"
+	"github.com/google/uuid"
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 
 	"github.com/jbenzshawel/go-sandbox/common/cerror"
 	"github.com/jbenzshawel/go-sandbox/common/decorator"
 	"github.com/jbenzshawel/go-sandbox/identity/domain"
-	"github.com/sirupsen/logrus"
+	"github.com/jbenzshawel/go-sandbox/identity/infrastructure/idp"
 )
 
 type RegisterUser struct {
@@ -35,6 +37,10 @@ func NewRegisterUserHandler(
 ) RegisterUserHandler {
 	if userRepo == nil {
 		panic("nil userRepo")
+	}
+
+	if identityProvider == nil {
+		panic("nil identityProvider")
 	}
 
 	return decorator.ApplyCommandDecorators[RegisterUser](
@@ -77,13 +83,25 @@ func (h registerUserHandler) Handle(ctx context.Context, cmd RegisterUser) error
 
 	userUUID, err := h.identityProvider.CreateUser(ctx, user, cmd.Password)
 	if err != nil {
-		return err
+		return h.handleCreateUserErr(ctx, userUUID, err)
 	}
 	user.UUID = userUUID
 
 	err = h.userRepo.InsertUser(user)
 	if err != nil {
-		return err
+		return h.handleCreateUserErr(ctx, userUUID, err)
 	}
 	return nil
+}
+
+func (h registerUserHandler) handleCreateUserErr(ctx context.Context, userUUID uuid.UUID, err error) error {
+	if userUUID != uuid.Nil {
+		// if we created a user with our identity provider but failed with additional
+		// setup attempt to delete the created user in our idp
+		deleteErr := h.identityProvider.DeleteUser(ctx, userUUID.String())
+		if deleteErr != nil {
+			return errors.Wrap(err, "Failed to delete partially created user")
+		}
+	}
+	return err
 }
