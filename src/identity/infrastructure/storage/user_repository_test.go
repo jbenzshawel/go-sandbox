@@ -5,58 +5,65 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/google/uuid"
 	_ "github.com/lib/pq"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/jbenzshawel/go-sandbox/identity/domain"
 )
 
 func TestUserRepository(t *testing.T) {
-	t.Parallel()
-
 	repositories := createUserRepositories()
 	for i := range repositories {
 		r := repositories[i]
 
 		t.Run(r.name, func(t *testing.T) {
-			t.Parallel()
+			userRepo := r.repository
+			var user domain.User
 
-			t.Run("testInsertUser", func(t *testing.T) {
-				t.Parallel()
-				testInsertUser(t, r.repository)
+			t.Run("InsertUser", func(t *testing.T) {
+				user = domain.User{
+					UUID:          uuid.New(),
+					FirstName:     "TestFirstName",
+					LastName:      "TestLastName",
+					Email:         fmt.Sprintf("%s@test.com", uuid.New().String()),
+					Enabled:       false,
+					CreatedAt:     time.Now().In(&time.Location{}),
+					LastUpdatedAt: time.Now().In(&time.Location{}),
+				}
+				err := userRepo.InsertUser(user)
+				require.NoError(t, err)
+			})
+
+			t.Run("GetUserByUUID", func(t *testing.T) {
+				createdUser, err := userRepo.GetUserByUUID(user.UUID)
+				require.NoError(t, err)
+				require.NotNil(t, createdUser)
+				assert.Greater(t, createdUser.ID, int32(0))
+				assertUserEqual(t, &user, createdUser)
+			})
+
+			t.Run("GetUserByEmail", func(t *testing.T) {
+				createdUser, err := userRepo.GetUserByEmail(user.Email)
+				require.NoError(t, err)
+				require.NotNil(t, createdUser)
+				assert.Greater(t, createdUser.ID, int32(0))
+				assertUserEqual(t, &user, createdUser)
 			})
 		})
 	}
 }
 
-func testInsertUser(t *testing.T, userRepository domain.UserRepository) {
-	t.Helper()
-
-	user := domain.User{
-		UUID:          uuid.New(),
-		FirstName:     "TestFirstName",
-		LastName:      "TestLastName",
-		Email:         fmt.Sprintf("%s.com", uuid.New().String()),
-		Enabled:       false,
-		CreatedAt:     time.Now().In(&time.Location{}),
-		LastUpdatedAt: time.Now().In(&time.Location{}),
-	}
-	err := userRepository.InsertUser(user)
-	require.NoError(t, err)
-
-	createdUser, err := userRepository.GetUserByUUID(user.UUID)
-	require.NoError(t, err)
-	require.NotNil(t, createdUser)
-	assert.Greater(t, createdUser.ID, int32(0))
-	assert.Equal(t, user.UUID, createdUser.UUID)
-	assert.Equal(t, user.FirstName, createdUser.FirstName)
-	assert.Equal(t, user.LastName, createdUser.LastName)
-	assert.Equal(t, user.Email, createdUser.Email)
-	assert.Equal(t, user.Enabled, createdUser.Enabled)
-	assert.WithinDuration(t, user.CreatedAt, createdUser.CreatedAt, 0)
-	assert.WithinDuration(t, user.LastUpdatedAt, createdUser.LastUpdatedAt, 0)
+func assertUserEqual(t *testing.T, expectedUser *domain.User, actualUser *domain.User) {
+	assert.Equal(t, expectedUser.UUID, actualUser.UUID)
+	assert.Equal(t, expectedUser.FirstName, actualUser.FirstName)
+	assert.Equal(t, expectedUser.LastName, actualUser.LastName)
+	assert.Equal(t, expectedUser.Email, actualUser.Email)
+	assert.Equal(t, expectedUser.Enabled, actualUser.Enabled)
+	assert.WithinDuration(t, expectedUser.CreatedAt, actualUser.CreatedAt, 0)
+	assert.WithinDuration(t, expectedUser.LastUpdatedAt, actualUser.LastUpdatedAt, 0)
 }
 
 type repository struct {

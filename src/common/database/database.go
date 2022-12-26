@@ -4,6 +4,8 @@ import (
 	"database/sql"
 
 	. "github.com/go-jet/jet/v2/postgres"
+
+	"github.com/jbenzshawel/go-sandbox/common/cerror"
 )
 
 type DbProvider func() (*sql.DB, error)
@@ -14,7 +16,8 @@ func Query(dbProvider DbProvider, stmt SelectStatement, result interface{}) (err
 		return err
 	}
 	defer func() {
-		err = db.Close()
+		closeErr := db.Close()
+		err = cerror.CombineErrors(err, closeErr)
 	}()
 
 	err = stmt.Query(db, result)
@@ -27,7 +30,8 @@ func ExecuteInsert(dbProvider DbProvider, stmt InsertStatement) (result sql.Resu
 		return nil, err
 	}
 	defer func() {
-		err = db.Close()
+		closeErr := db.Close()
+		err = cerror.CombineErrors(err, closeErr)
 	}()
 
 	result, err = stmt.Exec(db)
