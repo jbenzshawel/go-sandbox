@@ -19,7 +19,7 @@ services:
       - flyway
   flyway:
     image: flyway/flyway
-    command: -url=jdbc:postgresql://db:5432/identity -user=postgres -password=postgres migrate
+    command: -url=jdbc:postgresql://db:5432/identity -user=postgres -password=postgres -defaultSchema=identity migrate
     volumes:
       - ./src/sql_migration/identity:/flyway/sql
     depends_on:
