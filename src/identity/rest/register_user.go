@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/jbenzshawel/go-sandbox/common/cerror"
+	crest "github.com/jbenzshawel/go-sandbox/common/rest"
 	"github.com/jbenzshawel/go-sandbox/identity/app/command"
 	"github.com/jbenzshawel/go-sandbox/identity/app/query"
 )
@@ -43,13 +44,13 @@ func (s *HttpServer) RegisterUser(ctx *gin.Context) {
 		ConfirmPassword: user.ConfirmPassword,
 	})
 	if err != nil {
-		cerror.HandleValidationError(ctx, err)
+		crest.HandleErrorResponse(ctx, err)
 		return
 	}
 
 	createdUser, err := s.application.Queries.UserByEmail.Handle(ctx, query.UserByEmail{Email: user.Email})
 	if err != nil {
-		cerror.HandleValidationError(ctx, err)
+		crest.HandleErrorResponse(ctx, err)
 		return
 	}
 

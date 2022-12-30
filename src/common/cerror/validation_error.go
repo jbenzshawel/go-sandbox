@@ -3,9 +3,6 @@ package cerror
 import (
 	"errors"
 	"fmt"
-	"net/http"
-
-	"github.com/gin-gonic/gin"
 )
 
 type ValidationError struct {
@@ -24,12 +21,4 @@ func (r ValidationError) Error() string {
 
 func NewValidationError(errorMsg string, fieldErrors map[string]string) ValidationError {
 	return ValidationError{err: errors.New(errorMsg), Message: errorMsg, FieldErrors: fieldErrors}
-}
-
-func HandleValidationError(c *gin.Context, err error) {
-	if _, ok := err.(ValidationError); ok {
-		c.IndentedJSON(http.StatusBadRequest, err)
-	} else {
-		c.IndentedJSON(http.StatusInternalServerError, "internal server error")
-	}
 }

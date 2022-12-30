@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"os"
 
 	"github.com/jbenzshawel/go-sandbox/identity/infrastructure/idp"
@@ -41,6 +42,10 @@ func NewApplication() Application {
 		},
 		Logger: logger,
 	}
+}
+
+func DbProvider() (*sql.DB, error) {
+	return sql.Open("postgres", os.Getenv("IDENTITY_POSTGRES"))
 }
 
 func getUserRepo() domain.UserRepository {

@@ -14,6 +14,7 @@ func main() {
 	httpServer := rest.NewHttpServer(application)
 
 	router := gin.Default()
+	router.GET("/health", httpServer.HealthCheck)
 	router.POST("/register", httpServer.RegisterUser)
 
 	err := router.Run(":" + os.Getenv("HTTP_PORT"))
