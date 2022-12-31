@@ -113,7 +113,7 @@ func TestHealthCheckHandler(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			testLogger, _ := test.NewNullLogger()
+			testLogger, hook := test.NewNullLogger()
 			w := httptest.NewRecorder()
 			ctx, _ := gin.CreateTestContext(w)
 
@@ -133,7 +133,12 @@ func TestHealthCheckHandler(t *testing.T) {
 				assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 				assert.Equal(t, "unavailable", healthCheckResp.Status)
 				assert.Equal(t, tc.errors, healthCheckResp.Errors)
-				// TODO: Verify error log?
+				require.NotNil(t, hook)
+				require.Len(t, hook.Entries, 1)
+				logEntry := hook.Entries[0]
+				require.NotNil(t, logEntry)
+				assert.Equal(t, tc.errors[0], logEntry.Message)
+				assert.Equal(t, errors.New("nats connection failed"), logEntry.Data["error"])
 			}
 		})
 	}

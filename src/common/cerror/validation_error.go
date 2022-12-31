@@ -7,8 +7,8 @@ import (
 
 type ValidationError struct {
 	err         error
-	Message     string
-	FieldErrors map[string]string
+	Message     string            `json:"message"`
+	FieldErrors map[string]string `json:"fieldErrors"`
 }
 
 func (r ValidationError) Error() string {
