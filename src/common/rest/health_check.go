@@ -2,24 +2,24 @@ package rest
 
 import (
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 
 	"github.com/jbenzshawel/go-sandbox/common/cerror"
 	"github.com/jbenzshawel/go-sandbox/common/database"
 )
 
 type healthCheckResponse struct {
-	Status string   `json:"status,omitempty"`
-	Error  []string `json:"error,omitempty"`
+	Status string   `json:"status"`
+	Errors []string `json:"errors,omitempty"`
 }
 
 type HealthCheckTask func() (bool, string, error)
 
 func GetDatabaseHealthCheck(dbConn database.DbProvider) HealthCheckTask {
-	return func() (bool, string, error) {
+	return func() (success bool, name string, err error) {
 		healthCheckName := "database"
 		db, err := dbConn()
 		if err != nil {
@@ -53,13 +53,13 @@ func (h *HealthCheckHandler) Handler(ctx *gin.Context) {
 	for _, check := range h.checks {
 		if ok, name, err := check(); !ok {
 			msg := fmt.Sprintf("%s health check failed", name)
-			h.logger.WithError(err).Errorf(msg)
+			h.logger.WithError(err).Error(msg)
 			errs = append(errs, msg)
 		}
 	}
 	if len(errs) == 0 {
 		ctx.JSON(http.StatusOK, healthCheckResponse{Status: "available"})
 	} else {
-		ctx.JSON(http.StatusInternalServerError, healthCheckResponse{Status: "unavailable", Error: errs})
+		ctx.JSON(http.StatusInternalServerError, healthCheckResponse{Status: "unavailable", Errors: errs})
 	}
 }
