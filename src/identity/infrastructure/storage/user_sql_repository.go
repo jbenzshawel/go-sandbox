@@ -1,9 +1,8 @@
 package storage
 
 import (
+	"database/sql"
 	"os"
-
-	"github.com/jbenzshawel/go-sandbox/identity/app"
 
 	. "github.com/go-jet/jet/v2/postgres"
 	"github.com/google/uuid"
@@ -25,8 +24,10 @@ func NewUserSqlRepository(dbProvider database.DbProvider) *UserSqlRepository {
 }
 
 func TryCreateUserSqlRepository() (*UserSqlRepository, bool) {
-	if _, ok := os.LookupEnv("IDENTITY_POSTGRES"); ok {
-		return NewUserSqlRepository(app.DbProvider), true
+	if connectionString, ok := os.LookupEnv("IDENTITY_POSTGRES"); ok {
+		return NewUserSqlRepository(func() (*sql.DB, error) {
+			return sql.Open("postgres", connectionString)
+		}), true
 	}
 
 	return nil, false
