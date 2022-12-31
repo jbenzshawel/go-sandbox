@@ -18,10 +18,10 @@ type healthCheckResponse struct {
 
 type HealthCheckTask func() (bool, string, error)
 
-func GetDatabaseHealthCheck(dbConn database.DbProvider) HealthCheckTask {
+func GetDatabaseHealthCheck(dbProvider database.DbProvider) HealthCheckTask {
 	return func() (success bool, name string, err error) {
 		healthCheckName := "database"
-		db, err := dbConn()
+		db, err := dbProvider()
 		if err != nil {
 			return false, healthCheckName, err
 		}
