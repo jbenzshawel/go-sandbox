@@ -12,7 +12,7 @@ import (
 	"github.com/jbenzshawel/go-sandbox/identity/app/query"
 )
 
-type registerUserRequest struct {
+type createUserRequest struct {
 	FirstName       string `json:"firstName"`
 	LastName        string `json:"lastName"`
 	Email           string `json:"email"`
@@ -20,7 +20,7 @@ type registerUserRequest struct {
 	ConfirmPassword string `json:"confirmPassword"`
 }
 
-type registerUserResponse struct {
+type createUserResponse struct {
 	ID        int32     `json:"id"`
 	UUID      uuid.UUID `json:"uuid"`
 	FirstName string    `json:"firstName"`
@@ -28,8 +28,8 @@ type registerUserResponse struct {
 	Email     string    `json:"email"`
 }
 
-func (s *HttpServer) RegisterUser(ctx *gin.Context) {
-	var user registerUserRequest
+func (s *HttpHandler) CreateUser(ctx *gin.Context) {
+	var user createUserRequest
 	if err := ctx.BindJSON(&user); err != nil {
 		s.application.Logger.Error(err)
 		ctx.IndentedJSON(http.StatusBadRequest, cerror.NewValidationError("invalid JSON", nil))
@@ -54,7 +54,7 @@ func (s *HttpServer) RegisterUser(ctx *gin.Context) {
 		return
 	}
 
-	ctx.IndentedJSON(http.StatusCreated, &registerUserResponse{
+	ctx.JSON(http.StatusCreated, &createUserResponse{
 		ID:        createdUser.ID,
 		UUID:      createdUser.UUID,
 		FirstName: createdUser.FirstName,

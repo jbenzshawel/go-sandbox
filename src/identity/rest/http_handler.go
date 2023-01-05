@@ -7,13 +7,13 @@ import (
 	"github.com/jbenzshawel/go-sandbox/identity/app"
 )
 
-type HttpServer struct {
+type HttpHandler struct {
 	application app.Application
 	healthCheck *rest.HealthCheckHandler
 }
 
-func NewHttpServer(application app.Application) *HttpServer {
-	return &HttpServer{
+func NewHttpHandler(application app.Application) *HttpHandler {
+	return &HttpHandler{
 		application: application,
 		healthCheck: rest.NewHealthCheckHandler(
 			application.Logger,
@@ -22,6 +22,6 @@ func NewHttpServer(application app.Application) *HttpServer {
 	}
 }
 
-func (s *HttpServer) HealthCheck(ctx *gin.Context) {
+func (s *HttpHandler) HealthCheck(ctx *gin.Context) {
 	s.healthCheck.Handler(ctx)
 }
