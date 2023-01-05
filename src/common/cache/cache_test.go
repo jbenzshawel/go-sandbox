@@ -10,18 +10,18 @@ import (
 )
 
 func TestExpirationMap_New(t *testing.T) {
-	expMap := New[string, string](3, int(10*time.Minute), true)
+	expMap := NewExpirationMap[string, string](10*time.Minute, true)
 	require.NotNil(t, expMap.m)
 	assert.Len(t, expMap.m, 0)
 	assert.NotNil(t, expMap.m)
-	assert.Equal(t, int(10*time.Minute), expMap.maxTTL)
+	assert.Equal(t, (10 * time.Minute).Milliseconds(), expMap.maxTTL)
 	assert.True(t, expMap.slidingExpiration)
 }
 
-func TestExpirationMap_Put(t *testing.T) {
-	now := time.Now().Unix()
-	expMap := New[string, string](3, int(10*time.Minute), true)
-	expMap.Put("key", "value")
+func TestExpirationMap_Set(t *testing.T) {
+	now := time.Now().UnixMilli()
+	expMap := NewExpirationMap[string, string](10*time.Minute, true)
+	expMap.Set("key", "value")
 
 	cachedItem := expMap.m["key"]
 	assert.Equal(t, "value", cachedItem.value)
@@ -34,8 +34,8 @@ func TestExpirationMap_Get(t *testing.T) {
 	t.Parallel()
 
 	now := time.Now()
-	expMap := New[string, string](3, int(10*time.Minute), true)
-	expMap.Put("key", "value")
+	expMap := NewExpirationMap[string, string](10*time.Minute, true)
+	expMap.Set("key", "value")
 
 	delay := 1 * time.Second
 	time.Sleep(delay)
@@ -46,13 +46,13 @@ func TestExpirationMap_Get(t *testing.T) {
 
 	cachedItem := expMap.m["key"]
 	assert.Equal(t, "value", cachedItem.value)
-	assert.GreaterOrEqual(t, cachedItem.insertedAt, now.Unix())
-	assert.GreaterOrEqual(t, cachedItem.lastAccess, now.Add(delay).Unix())
+	assert.GreaterOrEqual(t, cachedItem.insertedAt, now.UnixMilli())
+	assert.GreaterOrEqual(t, cachedItem.lastAccess, now.Add(delay).UnixMilli())
 }
 
 func TestExpirationMap_Delete(t *testing.T) {
-	expMap := New[string, *struct{}](3, int(10*time.Minute), true)
-	expMap.Put("key", &struct{}{})
+	expMap := NewExpirationMap[string, *struct{}](10*time.Minute, true)
+	expMap.Set("key", &struct{}{})
 
 	expMap.Delete("key")
 
@@ -60,14 +60,43 @@ func TestExpirationMap_Delete(t *testing.T) {
 	assert.Nil(t, expMap.m["key"])
 }
 
+func TestExpirationMap_DeleteExpired(t *testing.T) {
+	expMap := NewExpirationMap[string, string](10*time.Minute, false)
+
+	expMap.Set("key1", "val1")
+	expMap.Set("key2", "val2")
+	cachedItem2 := expMap.m["key2"]
+	require.NotNil(t, cachedItem2)
+	cachedItem2.insertedAt = time.Now().Add(5 * time.Minute).UnixMilli()
+
+	expMap.Set("key3", "val3")
+	cachedItem3 := expMap.m["key3"]
+	require.NotNil(t, cachedItem3)
+	cachedItem3.insertedAt = time.Now().Add(10 * time.Minute).UnixMilli()
+
+	require.Equal(t, 3, expMap.Len())
+
+	expMap.DeleteExpired(time.Now())
+	assert.Equal(t, 3, expMap.Len())
+
+	expMap.DeleteExpired(time.Now().Add(11 * time.Minute))
+	assert.Equal(t, 2, expMap.Len())
+
+	expMap.DeleteExpired(time.Now().Add(16 * time.Minute))
+	assert.Equal(t, 1, expMap.Len())
+
+	expMap.DeleteExpired(time.Now().Add(21 * time.Minute))
+	assert.Equal(t, 0, expMap.Len())
+}
+
 func TestExpirationMap_ClearsExpiredWithoutSliding(t *testing.T) {
 	t.Parallel()
 
-	expMap := New[string, string](100, 1, false)
+	expMap := NewExpirationMap[string, string](1*time.Second, false)
 
 	for i := 0; i < 100; i++ {
 		k, v := fmt.Sprint("key", i), fmt.Sprint("value", i)
-		expMap.Put(k, v)
+		expMap.Set(k, v)
 	}
 
 	require.Equal(t, 100, expMap.Len())
@@ -78,19 +107,19 @@ func TestExpirationMap_ClearsExpiredWithoutSliding(t *testing.T) {
 func TestExpirationMap_ClearsExpiredWithSliding(t *testing.T) {
 	t.Parallel()
 
-	expMap := New[string, string](100, 1, true)
+	expMap := NewExpirationMap[string, string](1*time.Second, true)
 
 	for i := 0; i < 5; i++ {
 		k, v := fmt.Sprint("key", i), fmt.Sprint("value", i)
-		expMap.Put(k, v)
+		expMap.Set(k, v)
 	}
 
 	require.Equal(t, 5, expMap.Len())
 
-	time.Sleep(950 * time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 
 	for i := 0; i < 5; i++ {
-		time.Sleep(250 * time.Millisecond)
+		time.Sleep(100 * time.Millisecond)
 		expMap.Get(fmt.Sprint("key", i))
 	}
 
