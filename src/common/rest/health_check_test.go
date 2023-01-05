@@ -28,7 +28,22 @@ type dbHealthCheckTestCase struct {
 }
 
 func TestGetDatabaseHealthCheck(t *testing.T) {
-	testCases := []dbHealthCheckTestCase{
+	var testCases []dbHealthCheckTestCase
+
+	dbPingErrMsg := "dial tcp [::1]:5432: connect: connection refused"
+	if connectionString, ok := os.LookupEnv("IDENTITY_POSTGRES"); ok {
+		dbPingErrMsg = "pq: SSL is not enabled on the server"
+		testCases = append(testCases, dbHealthCheckTestCase{
+			name: "db health check success",
+			dbProvider: func() (*sql.DB, error) {
+				return sql.Open("postgres", connectionString)
+			},
+			success: true,
+			err:     nil,
+		})
+	}
+
+	testCases = append(testCases, []dbHealthCheckTestCase{
 		{
 			name: "db provider error",
 			dbProvider: func() (*sql.DB, error) {
@@ -43,20 +58,10 @@ func TestGetDatabaseHealthCheck(t *testing.T) {
 				return sql.Open("postgres", "")
 			},
 			success: false,
-			err:     errors.New("pq: SSL is not enabled on the server"),
+			err:     errors.New(dbPingErrMsg),
 		},
-	}
-	if connectionString, ok := os.LookupEnv("IDENTITY_POSTGRES"); ok {
-		testCases = append(testCases, dbHealthCheckTestCase{
-			name: "db health check success",
-			dbProvider: func() (*sql.DB, error) {
-				return sql.Open("postgres", connectionString)
-			},
-			success: true,
-			err:     nil,
-		})
-	}
-
+	}...)
+	
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {

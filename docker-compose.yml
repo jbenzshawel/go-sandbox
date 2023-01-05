@@ -7,16 +7,32 @@ services:
       - ./src:/src
     working_dir: /src/identity
     ports:
-      - "127.0.0.1:3002:3000"
+      - "127.0.0.1:4000:3000"
     environment:
       IDENTITY_POSTGRES: "host=db port=5432 user=identity password=dockerdbpw dbname=identity sslmode=disable"
-      HTTP_PORT: 3000
+      IDENTITY_HTTP_PORT: 3000
       IDP_BASE_PATH: http://keycloak:8080
       IDP_ADMIN_USER: admin
       IDP_ADMIN_PASSWORD: K3YCL04K!p@55w0RD
       IDP_REALM: master
+      NATS_URL: nats://127.0.0.1:4222
     depends_on:
       - flyway
+      - db
+      - nats
+  notification:
+    build:
+      context: docker/app
+    volumes:
+      - ./src:/src
+    working_dir: /src/notification
+    ports:
+      - "127.0.0.1:4001:3001"
+    environment:
+      NOTIFICATION_HTTP_PORT: 3001
+      NATS_URL: nats://127.0.0.1:4222
+    depends_on:
+      - nats
   flyway:
     image: flyway/flyway
     command: -url=jdbc:postgresql://db:5432/identity -user=postgres -password=postgres -defaultSchema=identity migrate
@@ -51,3 +67,8 @@ services:
       - '5432:5432'
     volumes:
       - ./docker/postgres/init-db.sh:/docker-entrypoint-initdb.d/init.sh
+  nats:
+    image: nats:2.9-alpine
+    ports:
+      - "8222:8222"
+    command: " --server_name nats-server --port 4222 --http_port 8222 "

@@ -26,6 +26,7 @@ type Commands struct {
 
 type Queries struct {
 	UserByEmail query.UserByEmailHandler
+	UserByUUID  query.UserByUUIDHandler
 }
 
 func NewApplication() Application {
@@ -39,6 +40,7 @@ func NewApplication() Application {
 		},
 		Queries: Queries{
 			UserByEmail: query.NewUserByEmailHandler(userRepo, logger),
+			UserByUUID:  query.NewUserByUUIDHandler(userRepo, logger),
 		},
 		Logger: logger,
 	}

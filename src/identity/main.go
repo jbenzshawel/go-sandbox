@@ -11,13 +11,15 @@ import (
 
 func main() {
 	application := app.NewApplication()
-	httpServer := rest.NewHttpServer(application)
+	httpHandler := rest.NewHttpHandler(application)
 
-	router := gin.Default()
-	router.GET("/health", httpServer.HealthCheck)
-	router.POST("/register", httpServer.RegisterUser)
+	router := gin.Default() // TODO: Update gin config for production
+	router.GET("/health", httpHandler.HealthCheck)
 
-	err := router.Run(":" + os.Getenv("HTTP_PORT"))
+	router.POST("/user", httpHandler.CreateUser)
+	router.GET("/user/:uuid", httpHandler.GetUserByUUID)
+
+	err := router.Run(":" + os.Getenv("IDENTITY_HTTP_PORT"))
 	if err != nil {
 		panic(err)
 	}
