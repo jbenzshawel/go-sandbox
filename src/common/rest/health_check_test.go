@@ -61,7 +61,7 @@ func TestGetDatabaseHealthCheck(t *testing.T) {
 			err:     errors.New(dbPingErrMsg),
 		},
 	}...)
-	
+
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
