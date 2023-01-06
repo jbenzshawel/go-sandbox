@@ -2,15 +2,17 @@ package app
 
 import (
 	"database/sql"
+	"net/url"
 	"os"
 
-	"github.com/jbenzshawel/go-sandbox/identity/infrastructure/idp"
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 
 	"github.com/jbenzshawel/go-sandbox/identity/app/command"
 	"github.com/jbenzshawel/go-sandbox/identity/app/query"
 	"github.com/jbenzshawel/go-sandbox/identity/domain"
+	"github.com/jbenzshawel/go-sandbox/identity/infrastructure/idp"
+	"github.com/jbenzshawel/go-sandbox/identity/infrastructure/publisher"
 	"github.com/jbenzshawel/go-sandbox/identity/infrastructure/storage"
 )
 
@@ -21,7 +23,8 @@ type Application struct {
 }
 
 type Commands struct {
-	RegisterUser command.RegisterUserHandler
+	CreateUser            command.UserCreateHandler
+	SendVerificationEmail command.SendVerificationEmailHandler
 }
 
 type Queries struct {
@@ -30,13 +33,31 @@ type Queries struct {
 }
 
 func NewApplication() Application {
+	// TODO: Refactor how this dependency graph is built?
 	logger := logrus.NewEntry(logrus.StandardLogger())
+
+	publishers := publisher.NewNatsPublisher(os.Getenv("NATS_URL"))
+
+	verificationTokenCache := storage.NewVerificationTokenCache()
+	verificationTokenRepo := storage.NewVerificationTokenRepository(verificationTokenCache)
+
 	userRepo := getUserRepo()
 	identityProvider := getIdentityProvider()
 
+	verificationURL, err := url.Parse("http://localhost") // TODO: pull from config
+	if err != nil {
+		panic(err)
+	}
+
 	return Application{
 		Commands: Commands{
-			RegisterUser: command.NewRegisterUserHandler(userRepo, identityProvider, logger),
+			CreateUser: command.NewCreateUserHandler(userRepo, identityProvider, logger),
+			SendVerificationEmail: command.NewSendVerificationEmailHandler(
+				verificationTokenRepo,
+				verificationURL,
+				publishers.NotifyVerifyEmailPublisher(),
+				logger,
+			),
 		},
 		Queries: Queries{
 			UserByEmail: query.NewUserByEmailHandler(userRepo, logger),

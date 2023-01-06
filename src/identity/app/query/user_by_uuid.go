@@ -38,6 +38,10 @@ func NewUserByUUIDHandler(
 		panic("nil userRepo")
 	}
 
+	if logger == nil {
+		panic("nil logger")
+	}
+	
 	return decorator.ApplyQueryDecorators[UserByUUID, *domain.User](
 		userByUUIDHandler{userRepo: userRepo},
 		logger,

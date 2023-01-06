@@ -29,9 +29,9 @@ func TestRegisterUserHandler(t *testing.T) {
 		Return(fakeUserID, nil).
 		Once()
 
-	handler := NewRegisterUserHandler(userRepo, mockIDP, logrus.NewEntry(testLogger))
+	handler := NewCreateUserHandler(userRepo, mockIDP, logrus.NewEntry(testLogger))
 
-	cmd := RegisterUser{
+	cmd := UserCreate{
 		FirstName:       "TestFirst",
 		LastName:        "TestLast",
 		Email:           fmt.Sprintf("%s@test.com", uuid.New().String()),
@@ -63,9 +63,9 @@ func TestRegisterUserHandler_CreateIDPUserFails(t *testing.T) {
 		Return(uuid.Nil, errors.New("create fails")).
 		Once()
 
-	handler := NewRegisterUserHandler(userRepo, mockIDP, logrus.NewEntry(testLogger))
+	handler := NewCreateUserHandler(userRepo, mockIDP, logrus.NewEntry(testLogger))
 
-	cmd := RegisterUser{
+	cmd := UserCreate{
 		FirstName:       "TestFirst",
 		LastName:        "TestLast",
 		Email:           fmt.Sprintf("%s@test.com", uuid.New().String()),
@@ -92,9 +92,9 @@ func TestRegisterUserHandler_CreateIDPUserPartiallyFails(t *testing.T) {
 		Return(nil).
 		Once()
 
-	handler := NewRegisterUserHandler(userRepo, mockIDP, logrus.NewEntry(testLogger))
+	handler := NewCreateUserHandler(userRepo, mockIDP, logrus.NewEntry(testLogger))
 
-	cmd := RegisterUser{
+	cmd := UserCreate{
 		FirstName:       "TestFirst",
 		LastName:        "TestLast",
 		Email:           fmt.Sprintf("%s@test.com", uuid.New().String()),
@@ -130,9 +130,9 @@ func TestRegisterUserHandler_RepoInsertUserFails(t *testing.T) {
 		Return(errors.New("repo error")).
 		Once()
 
-	handler := NewRegisterUserHandler(mockRepo, mockIDP, logrus.NewEntry(testLogger))
+	handler := NewCreateUserHandler(mockRepo, mockIDP, logrus.NewEntry(testLogger))
 
-	cmd := RegisterUser{
+	cmd := UserCreate{
 		FirstName:       "TestFirst",
 		LastName:        "TestLast",
 		Email:           fakeEmail,

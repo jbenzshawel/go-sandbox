@@ -15,7 +15,7 @@ import (
 	"github.com/jbenzshawel/go-sandbox/identity/infrastructure/idp"
 )
 
-type RegisterUser struct {
+type UserCreate struct {
 	FirstName       string
 	LastName        string
 	Email           string
@@ -23,18 +23,18 @@ type RegisterUser struct {
 	ConfirmPassword string
 }
 
-type RegisterUserHandler decorator.CommandHandler[RegisterUser]
+type UserCreateHandler decorator.CommandHandler[UserCreate]
 
-type registerUserHandler struct {
+type userCreateHandler struct {
 	userRepo         domain.UserRepository
 	identityProvider idp.IdentityProvider
 }
 
-func NewRegisterUserHandler(
+func NewCreateUserHandler(
 	userRepo domain.UserRepository,
 	identityProvider idp.IdentityProvider,
 	logger *logrus.Entry,
-) RegisterUserHandler {
+) UserCreateHandler {
 	if userRepo == nil {
 		panic("nil userRepo")
 	}
@@ -43,8 +43,12 @@ func NewRegisterUserHandler(
 		panic("nil identityProvider")
 	}
 
-	return decorator.ApplyCommandDecorators[RegisterUser](
-		registerUserHandler{
+	if logger == nil {
+		panic("nil logger")
+	}
+
+	return decorator.ApplyCommandDecorators[UserCreate](
+		userCreateHandler{
 			userRepo:         userRepo,
 			identityProvider: identityProvider,
 		},
@@ -52,7 +56,7 @@ func NewRegisterUserHandler(
 	)
 }
 
-func (h registerUserHandler) Handle(ctx context.Context, cmd RegisterUser) error {
+func (h userCreateHandler) Handle(ctx context.Context, cmd UserCreate) error {
 	// TODO: Create some sort of config driven password validator
 	validationErrors := map[string]string{}
 	if cmd.Password != cmd.ConfirmPassword {
@@ -94,7 +98,7 @@ func (h registerUserHandler) Handle(ctx context.Context, cmd RegisterUser) error
 	return nil
 }
 
-func (h registerUserHandler) handleCreateUserErr(ctx context.Context, userUUID uuid.UUID, err error) error {
+func (h userCreateHandler) handleCreateUserErr(ctx context.Context, userUUID uuid.UUID, err error) error {
 	if userUUID != uuid.Nil {
 		// if we created a user with our identity provider but failed with additional
 		// setup attempt to delete the created user in our idp

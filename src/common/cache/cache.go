@@ -69,6 +69,7 @@ func (m *ExpirationMap[K, V]) startCleanup() {
 	for {
 		select {
 		case <-m.stopSignal:
+			ticker.Stop()
 			break
 		case t := <-ticker.C:
 			m.DeleteExpired(t)

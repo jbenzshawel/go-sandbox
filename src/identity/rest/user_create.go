@@ -36,7 +36,7 @@ func (s *HttpHandler) CreateUser(ctx *gin.Context) {
 		return
 	}
 
-	err := s.application.Commands.RegisterUser.Handle(ctx, command.RegisterUser{
+	err := s.application.Commands.CreateUser.Handle(ctx, command.UserCreate{
 		FirstName:       user.FirstName,
 		LastName:        user.LastName,
 		Email:           user.Email,
@@ -52,6 +52,16 @@ func (s *HttpHandler) CreateUser(ctx *gin.Context) {
 	if err != nil {
 		crest.HandleErrorResponse(ctx, err)
 		return
+	}
+
+	err = s.application.Commands.SendVerificationEmail.Handle(ctx, command.SendVerificationEmail{
+		UserUUID:  createdUser.UUID,
+		FirstName: createdUser.FirstName,
+		Email:     createdUser.Email,
+	})
+	if err != nil {
+		// just log error here since the user has been created. verification email can be resent
+		s.application.Logger.WithError(err).Error("failed to send verification email during create user")
 	}
 
 	ctx.JSON(http.StatusCreated, &createUserResponse{

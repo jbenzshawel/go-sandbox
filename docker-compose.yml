@@ -15,11 +15,11 @@ services:
       IDP_ADMIN_USER: admin
       IDP_ADMIN_PASSWORD: K3YCL04K!p@55w0RD
       IDP_REALM: master
-      NATS_URL: nats://127.0.0.1:4222
+      NATS_URL: nats://nats-server:4222
     depends_on:
       - flyway
       - db
-      - nats
+      - nats-server
   notification:
     build:
       context: docker/app
@@ -30,9 +30,9 @@ services:
       - "127.0.0.1:4001:3001"
     environment:
       NOTIFICATION_HTTP_PORT: 3001
-      NATS_URL: nats://127.0.0.1:4222
+      NATS_URL: nats://nats-server:4222
     depends_on:
-      - nats
+      - nats-server
   flyway:
     image: flyway/flyway
     command: -url=jdbc:postgresql://db:5432/identity -user=postgres -password=postgres -defaultSchema=identity migrate
@@ -67,7 +67,7 @@ services:
       - '5432:5432'
     volumes:
       - ./docker/postgres/init-db.sh:/docker-entrypoint-initdb.d/init.sh
-  nats:
+  nats-server:
     image: nats:2.9-alpine
     ports:
       - "8222:8222"

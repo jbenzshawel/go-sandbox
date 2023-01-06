@@ -36,6 +36,10 @@ func NewUserByEmailHandler(
 		panic("nil userRepo")
 	}
 
+	if logger == nil {
+		panic("nil logger")
+	}
+
 	return decorator.ApplyQueryDecorators[UserByEmail, *domain.User](
 		userByEmailHandler{userRepo: userRepo},
 		logger,
