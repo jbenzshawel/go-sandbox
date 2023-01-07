@@ -2,6 +2,7 @@ package app
 
 import (
 	"database/sql"
+	"github.com/pkg/errors"
 	"net/url"
 	"os"
 
@@ -32,21 +33,21 @@ type Queries struct {
 	UserByUUID  query.UserByUUIDHandler
 }
 
+var verificationTokenCache = storage.NewVerificationTokenCache()
+
 func NewApplication() Application {
-	// TODO: Refactor how this dependency graph is built?
 	logger := logrus.NewEntry(logrus.StandardLogger())
 
 	publishers := publisher.NewNatsPublisher(os.Getenv("NATS_URL"))
 
-	verificationTokenCache := storage.NewVerificationTokenCache()
-	verificationTokenRepo := storage.NewVerificationTokenRepository(verificationTokenCache)
+	identityProvider := getIdentityProvider()
 
 	userRepo := getUserRepo()
-	identityProvider := getIdentityProvider()
+	verificationTokenRepo := storage.NewVerificationTokenRepository(verificationTokenCache)
 
 	verificationURL, err := url.Parse("http://localhost") // TODO: pull from config
 	if err != nil {
-		panic(err)
+		panic(errors.Wrap(err, "failed to parse verification URL"))
 	}
 
 	return Application{
