@@ -73,6 +73,9 @@ func (m *ExpirationMap[K, V]) startCleanup() {
 			break
 		case t := <-ticker.C:
 			m.DeleteExpired(t)
+			if len(m.m) == 0 {
+				ticker.Stop()
+			}
 		}
 	}
 }
