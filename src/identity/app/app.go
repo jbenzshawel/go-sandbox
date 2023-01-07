@@ -2,9 +2,10 @@ package app
 
 import (
 	"database/sql"
-	"github.com/pkg/errors"
 	"net/url"
 	"os"
+
+	"github.com/pkg/errors"
 
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
