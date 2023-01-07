@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/nats-io/nats.go"
 	"github.com/sirupsen/logrus"
 
 	"github.com/jbenzshawel/go-sandbox/common/cerror"
@@ -36,6 +37,16 @@ func GetDatabaseHealthCheck(dbProvider database.DbProvider) HealthCheckTask {
 		}
 
 		return true, healthCheckName, nil
+	}
+}
+
+func GetNatsHealthCheck(nc *nats.Conn) HealthCheckTask {
+	return func() (bool, string, error) {
+		healthCheckName := "nats"
+		if nc.IsConnected() {
+			return true, healthCheckName, nil
+		}
+		return false, healthCheckName, nil
 	}
 }
 

@@ -27,7 +27,7 @@ func main() {
 		panic(err)
 	}
 
-	httpHandler := rest.NewHttpHandler(application)
+	httpHandler := rest.NewHttpHandler(application, nc)
 	router := gin.Default() // TODO: Update gin config for production
 	router.GET("/health", httpHandler.HealthCheck)
 

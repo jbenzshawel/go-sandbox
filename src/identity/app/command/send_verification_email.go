@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
+	"github.com/vmihailenco/msgpack/v5"
 
 	"github.com/jbenzshawel/go-sandbox/common/decorator"
 	"github.com/jbenzshawel/go-sandbox/common/messaging"
@@ -24,13 +25,13 @@ type SendVerificationEmailHandler decorator.CommandHandler[SendVerificationEmail
 type sendVerificationEmailHandler struct {
 	tokenRepo       domain.TokenRepository
 	verificationURL *url.URL
-	msgPublisher    func(msg *messaging.VerifyEmail) error
+	publisher       messaging.Publisher
 }
 
 func NewSendVerificationEmailHandler(
 	tokenRepo domain.TokenRepository,
 	verificationURL *url.URL,
-	msgPublisher func(msg *messaging.VerifyEmail) error,
+	publisher messaging.Publisher,
 	logger *logrus.Entry,
 ) SendVerificationEmailHandler {
 	if tokenRepo == nil {
@@ -41,8 +42,8 @@ func NewSendVerificationEmailHandler(
 		panic("nil verificationURL")
 	}
 
-	if msgPublisher == nil {
-		panic("nil msgPublisher")
+	if publisher == nil {
+		panic("nil publisher")
 	}
 
 	if logger == nil {
@@ -53,7 +54,7 @@ func NewSendVerificationEmailHandler(
 		sendVerificationEmailHandler{
 			tokenRepo:       tokenRepo,
 			verificationURL: verificationURL,
-			msgPublisher:    msgPublisher,
+			publisher:       publisher,
 		},
 		logger,
 	)
@@ -70,15 +71,18 @@ func (h sendVerificationEmailHandler) Handle(ctx context.Context, cmd SendVerifi
 	h.verificationURL.Query().Add("token", token)
 	h.verificationURL.Query().Add("id", cmd.UserUUID.String())
 
-	msg := &messaging.VerifyEmail{
+	msgBytes, err := msgpack.Marshal(&messaging.VerifyEmail{
 		UserUUID:        cmd.UserUUID,
 		FirstName:       cmd.FirstName,
 		Email:           cmd.Email,
 		Code:            token,
 		VerificationURL: h.verificationURL.String(),
+	})
+	if err != nil {
+		return err
 	}
 
-	return h.msgPublisher(msg)
+	return h.publisher.Publish(messaging.TOPIC_VERIFY_EMAIL, msgBytes)
 }
 
 const tokenChars = "1234567890"
