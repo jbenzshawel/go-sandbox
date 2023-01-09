@@ -68,15 +68,16 @@ func (h sendVerificationEmailHandler) Handle(ctx context.Context, cmd SendVerifi
 
 	h.tokenRepo.SaveToken(cmd.UserUUID, token)
 
-	h.verificationURL.Query().Add("token", token)
-	h.verificationURL.Query().Add("id", cmd.UserUUID.String())
+	v := url.Values{}
+	v.Set("token", token)
+	v.Set("id", cmd.UserUUID.String())
 
 	msgBytes, err := msgpack.Marshal(&messaging.VerifyEmail{
 		UserUUID:        cmd.UserUUID,
 		FirstName:       cmd.FirstName,
 		Email:           cmd.Email,
 		Code:            token,
-		VerificationURL: h.verificationURL.String(),
+		VerificationURL: h.verificationURL.String() + "?" + v.Encode(),
 	})
 	if err != nil {
 		return err

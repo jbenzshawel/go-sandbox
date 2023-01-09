@@ -29,10 +29,15 @@ services:
     ports:
       - "127.0.0.1:4001:3001"
     environment:
+      SERVER_ENVIRONMENT: "docker-compose"
       NOTIFICATION_HTTP_PORT: 3001
       NATS_URL: nats://nats-server:4222
+      SMTP_URL: "mail-hog:1025"
+      SMTP_HOST: "mail-hog"
+      SMTP_FROM: "donotreply@example.com"
     depends_on:
       - nats-server
+      - mail-hog
   flyway:
     image: flyway/flyway
     command: -url=jdbc:postgresql://db:5432/identity -user=postgres -password=postgres -defaultSchema=identity migrate
@@ -64,11 +69,18 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
     ports:
-      - '5432:5432'
+      - "5432:5432"
     volumes:
       - ./docker/postgres/init-db.sh:/docker-entrypoint-initdb.d/init.sh
   nats-server:
     image: nats:2.9-alpine
     ports:
       - "8222:8222"
+      - "4222:4222"
     command: " --server_name nats-server --port 4222 --http_port 8222 "
+  mail-hog:
+    build:
+      context: docker/mailhog
+    ports:
+      - "1025:1025"
+      - "8025:8025"

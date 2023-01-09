@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/gin-gonic/gin v1.8.2
+	github.com/google/uuid v1.1.1
 	github.com/jbenzshawel/go-sandbox/common v0.0.0-00010101000000-000000000000
 	github.com/lib/pq v1.10.5
 	github.com/nats-io/nats.go v1.22.1
@@ -19,7 +20,6 @@ require (
 	github.com/go-playground/universal-translator v0.18.0 // indirect
 	github.com/go-playground/validator/v10 v10.11.1 // indirect
 	github.com/goccy/go-json v0.9.11 // indirect
-	github.com/google/uuid v1.1.1 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.15.11 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect

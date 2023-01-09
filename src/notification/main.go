@@ -13,7 +13,7 @@ import (
 func main() {
 	application := app.NewApplication()
 
-	nc, err := nats.Connect(application.Config.NatsURL)
+	nc, err := nats.Connect(application.Config.NATSURL)
 	if err != nil {
 		panic(err)
 	}
@@ -31,7 +31,7 @@ func main() {
 	router := gin.Default() // TODO: Update gin config for production
 	router.GET("/health", httpHandler.HealthCheck)
 
-	err = router.Run(":" + application.Config.HttpPort)
+	err = router.Run(":" + application.Config.HTTPPort)
 	if err != nil {
 		panic(err)
 	}
