@@ -7,8 +7,6 @@ import (
 	"os"
 )
 
-const htmlMIME = "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
-
 type Email struct {
 	To      string
 	Subject string
@@ -29,6 +27,8 @@ type EmailClient struct {
 func NewEmailClient(smtpAddr, host, from string) *EmailClient {
 	return &EmailClient{smtpAddr: smtpAddr, host: host, from: from}
 }
+
+const htmlMIME = "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
 
 func (c *EmailClient) SendMail(email *Email) error {
 	auth := PlainAuth("", "", "", c.host)
@@ -62,7 +62,7 @@ func isLocalhost(name string) bool {
 	return name == "localhost" ||
 		name == "127.0.0.1" ||
 		name == "::1" ||
-		(name == "mail-hog" && os.Getenv("SERVER_ENVIRONMENT") == "docker-compose")
+		(name == os.Getenv("SMTP_HOST") && os.Getenv("SERVER_ENVIRONMENT") == "docker-compose")
 }
 
 func (a *plainAuth) Start(server *smtp.ServerInfo) (string, []byte, error) {
