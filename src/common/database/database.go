@@ -37,3 +37,17 @@ func ExecuteInsert(dbProvider DbProvider, stmt InsertStatement) (result sql.Resu
 	result, err = stmt.Exec(db)
 	return
 }
+
+func ExecuteUpdate(dbProvider DbProvider, stmt UpdateStatement) (result sql.Result, err error) {
+	db, err := dbProvider()
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		closeErr := db.Close()
+		err = cerror.CombineErrors(err, closeErr)
+	}()
+
+	result, err = stmt.Exec(db)
+	return
+}

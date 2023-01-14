@@ -6,11 +6,12 @@ import (
 	"github.com/Nerzal/gocloak/v12"
 	"github.com/google/uuid"
 
-	"github.com/jbenzshawel/go-sandbox/identity/domain"
+	"github.com/jbenzshawel/go-sandbox/identity/domain/user"
 )
 
 type IdentityProvider interface {
-	CreateUser(ctx context.Context, user domain.User, password string) (uuid.UUID, error)
+	CreateUser(ctx context.Context, user *user.User, password string) (uuid.UUID, error)
+	UpdateUser(ctx context.Context, user *user.User) error
 	DeleteUser(ctx context.Context, userID string) error
 }
 
@@ -30,19 +31,13 @@ func NewKeyCloakProvider(basePath, user, password, realm string) *KeyCloakProvid
 	}
 }
 
-func (idp *KeyCloakProvider) CreateUser(ctx context.Context, user domain.User, password string) (uuid.UUID, error) {
+func (idp *KeyCloakProvider) CreateUser(ctx context.Context, user *user.User, password string) (uuid.UUID, error) {
 	jwt, err := idp.getToken(ctx)
 	if err != nil {
 		return uuid.Nil, err
 	}
 
-	idpUser := gocloak.User{
-		FirstName: gocloak.StringP(user.FirstName),
-		LastName:  gocloak.StringP(user.LastName),
-		Email:     gocloak.StringP(user.Email),
-		Enabled:   gocloak.BoolP(user.Enabled),
-		Username:  gocloak.StringP(user.Email),
-	}
+	idpUser := idp.mapKeyCloakUser(user)
 
 	idpUserID, err := idp.client.CreateUser(ctx, jwt.AccessToken, idp.realm, idpUser)
 	if err != nil {
@@ -60,6 +55,29 @@ func (idp *KeyCloakProvider) CreateUser(ctx context.Context, user domain.User, p
 	}
 
 	return userUUID, nil
+}
+
+func (idp *KeyCloakProvider) UpdateUser(ctx context.Context, user *user.User) error {
+	jwt, err := idp.getToken(ctx)
+	if err != nil {
+		return err
+	}
+
+	idpUser := idp.mapKeyCloakUser(user)
+	idpUser.ID = gocloak.StringP(user.UUID().String())
+
+	return idp.client.UpdateUser(ctx, jwt.AccessToken, idp.realm, idpUser)
+}
+
+func (idp *KeyCloakProvider) mapKeyCloakUser(user *user.User) gocloak.User {
+	return gocloak.User{
+		FirstName:     gocloak.StringP(user.FirstName()),
+		LastName:      gocloak.StringP(user.LastName()),
+		Email:         gocloak.StringP(user.Email()),
+		EmailVerified: gocloak.BoolP(user.EmailVerified()),
+		Enabled:       gocloak.BoolP(user.Enabled()),
+		Username:      gocloak.StringP(user.Email()),
+	}
 }
 
 func (idp *KeyCloakProvider) DeleteUser(ctx context.Context, userID string) error {

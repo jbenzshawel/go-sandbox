@@ -19,6 +19,7 @@ type Users struct {
 	FirstName     string
 	LastName      string
 	Email         string
+	EmailVerified bool
 	Enabled       bool
 	CreatedAt     time.Time
 	LastUpdatedAt time.Time

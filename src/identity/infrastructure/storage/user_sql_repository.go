@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/jbenzshawel/go-sandbox/common/database"
-	"github.com/jbenzshawel/go-sandbox/identity/domain"
+	"github.com/jbenzshawel/go-sandbox/identity/domain/user"
 	"github.com/jbenzshawel/go-sandbox/identity/infrastructure/gen/identity/identity/model"
 	. "github.com/jbenzshawel/go-sandbox/identity/infrastructure/gen/identity/identity/table"
 )
@@ -33,22 +33,40 @@ func TryCreateUserSqlRepository() (*UserSqlRepository, bool) {
 	return nil, false
 }
 
-func (r *UserSqlRepository) InsertUser(user domain.User) error {
+func (r *UserSqlRepository) InsertUser(u *user.User) error {
 	_, err := database.ExecuteInsert(r.dbProvider, Users.INSERT(Users.MutableColumns).
 		MODEL(model.Users{
-			UUID:          user.UUID,
-			FirstName:     user.FirstName,
-			LastName:      user.LastName,
-			Email:         user.Email,
-			Enabled:       user.Enabled,
-			CreatedAt:     user.CreatedAt,
-			LastUpdatedAt: user.LastUpdatedAt,
+			UUID:          u.UUID(),
+			FirstName:     u.FirstName(),
+			LastName:      u.LastName(),
+			Email:         u.Email(),
+			Enabled:       u.Enabled(),
+			CreatedAt:     u.CreatedAt(),
+			LastUpdatedAt: u.LastUpdatedAt(),
 		}))
 
 	return err
 }
 
-func (r *UserSqlRepository) GetUserByEmail(email string) (*domain.User, error) {
+func (r *UserSqlRepository) UpdateUser(u *user.User) error {
+	columns := ColumnList{Users.FirstName, Users.LastName, Users.Email,
+		Users.EmailVerified, Users.Enabled, Users.LastUpdatedAt}
+
+	_, err := database.ExecuteUpdate(r.dbProvider, Users.UPDATE(columns).
+		MODEL(model.Users{
+			FirstName:     u.FirstName(),
+			LastName:      u.LastName(),
+			Email:         u.Email(),
+			EmailVerified: u.EmailVerified(),
+			Enabled:       u.Enabled(),
+			LastUpdatedAt: u.LastUpdatedAt(),
+		}).
+		WHERE(Users.UUID.EQ(UUID(u.UUID()))))
+
+	return err
+}
+
+func (r *UserSqlRepository) GetUserByEmail(email string) (*user.User, error) {
 	return r.queryForUser(
 		SELECT(Users.AllColumns).
 			FROM(Users).
@@ -56,7 +74,7 @@ func (r *UserSqlRepository) GetUserByEmail(email string) (*domain.User, error) {
 	)
 }
 
-func (r *UserSqlRepository) GetUserByUUID(uuid uuid.UUID) (*domain.User, error) {
+func (r *UserSqlRepository) GetUserByUUID(uuid uuid.UUID) (*user.User, error) {
 	return r.queryForUser(
 		SELECT(Users.AllColumns).
 			FROM(Users).
@@ -64,7 +82,7 @@ func (r *UserSqlRepository) GetUserByUUID(uuid uuid.UUID) (*domain.User, error) 
 	)
 }
 
-func (r *UserSqlRepository) queryForUser(stmt SelectStatement) (*domain.User, error) {
+func (r *UserSqlRepository) queryForUser(stmt SelectStatement) (*user.User, error) {
 	var users []model.Users
 	err := database.Query(r.dbProvider, stmt, &users)
 	if err != nil {
@@ -72,21 +90,22 @@ func (r *UserSqlRepository) queryForUser(stmt SelectStatement) (*domain.User, er
 	}
 
 	if len(users) > 0 {
-		return mapToDomain(users[0]), nil
+		return mapToDomain(users[0])
 	}
 
 	return nil, nil
 }
 
-func mapToDomain(user model.Users) *domain.User {
-	return &domain.User{
-		ID:            user.ID,
-		UUID:          user.UUID,
-		FirstName:     user.FirstName,
-		LastName:      user.LastName,
-		Email:         user.Email,
-		Enabled:       user.Enabled,
-		CreatedAt:     user.CreatedAt,
-		LastUpdatedAt: user.LastUpdatedAt,
-	}
+func mapToDomain(u model.Users) (*user.User, error) {
+	return user.FromDatabase(
+		u.ID,
+		u.UUID,
+		u.FirstName,
+		u.LastName,
+		u.Email,
+		u.EmailVerified,
+		u.Enabled,
+		u.CreatedAt,
+		u.LastUpdatedAt,
+	)
 }

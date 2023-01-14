@@ -6,30 +6,30 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/jbenzshawel/go-sandbox/common/decorator"
-	"github.com/jbenzshawel/go-sandbox/identity/domain"
+	"github.com/jbenzshawel/go-sandbox/identity/domain/user"
 )
 
 type UserByEmail struct {
 	Email string
 }
 
-type UserByEmailHandler decorator.QueryHandler[UserByEmail, *domain.User]
+type UserByEmailHandler decorator.QueryHandler[UserByEmail, *user.User]
 
 type userByEmailHandler struct {
-	userRepo domain.UserRepository
+	userRepo user.Repository
 }
 
-func (h userByEmailHandler) Handle(ctx context.Context, userByEmail UserByEmail) (*domain.User, error) {
-	user, err := h.userRepo.GetUserByEmail(userByEmail.Email)
+func (h userByEmailHandler) Handle(ctx context.Context, userByEmail UserByEmail) (*user.User, error) {
+	u, err := h.userRepo.GetUserByEmail(userByEmail.Email)
 	if err != nil {
 		return nil, err
 	}
 
-	return user, nil
+	return u, nil
 }
 
 func NewUserByEmailHandler(
-	userRepo domain.UserRepository,
+	userRepo user.Repository,
 	logger *logrus.Entry,
 ) UserByEmailHandler {
 	if userRepo == nil {
@@ -40,7 +40,7 @@ func NewUserByEmailHandler(
 		panic("nil logger")
 	}
 
-	return decorator.ApplyQueryDecorators[UserByEmail, *domain.User](
+	return decorator.ApplyQueryDecorators[UserByEmail, *user.User](
 		userByEmailHandler{userRepo: userRepo},
 		logger,
 	)

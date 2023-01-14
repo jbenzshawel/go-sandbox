@@ -8,30 +8,30 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/jbenzshawel/go-sandbox/common/decorator"
-	"github.com/jbenzshawel/go-sandbox/identity/domain"
+	"github.com/jbenzshawel/go-sandbox/identity/domain/user"
 )
 
 type UserByUUID struct {
 	UUID uuid.UUID
 }
 
-type UserByUUIDHandler decorator.QueryHandler[UserByUUID, *domain.User]
+type UserByUUIDHandler decorator.QueryHandler[UserByUUID, *user.User]
 
 type userByUUIDHandler struct {
-	userRepo domain.UserRepository
+	userRepo user.Repository
 }
 
-func (h userByUUIDHandler) Handle(ctx context.Context, userByUUID UserByUUID) (*domain.User, error) {
-	user, err := h.userRepo.GetUserByUUID(userByUUID.UUID)
+func (h userByUUIDHandler) Handle(ctx context.Context, userByUUID UserByUUID) (*user.User, error) {
+	u, err := h.userRepo.GetUserByUUID(userByUUID.UUID)
 	if err != nil {
 		return nil, err
 	}
 
-	return user, nil
+	return u, nil
 }
 
 func NewUserByUUIDHandler(
-	userRepo domain.UserRepository,
+	userRepo user.Repository,
 	logger *logrus.Entry,
 ) UserByUUIDHandler {
 	if userRepo == nil {
@@ -42,7 +42,7 @@ func NewUserByUUIDHandler(
 		panic("nil logger")
 	}
 
-	return decorator.ApplyQueryDecorators[UserByUUID, *domain.User](
+	return decorator.ApplyQueryDecorators[UserByUUID, *user.User](
 		userByUUIDHandler{userRepo: userRepo},
 		logger,
 	)

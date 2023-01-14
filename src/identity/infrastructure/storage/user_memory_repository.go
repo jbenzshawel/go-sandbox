@@ -5,53 +5,65 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/jbenzshawel/go-sandbox/identity/domain"
+	"github.com/jbenzshawel/go-sandbox/identity/domain/user"
 )
 
 type UserMemoryRepository struct {
-	users  map[string]domain.User
+	users  map[string]user.User
 	lock   *sync.RWMutex
 	lastId int32
 }
 
 func NewUserMemoryRepository() *UserMemoryRepository {
 	return &UserMemoryRepository{
-		users:  map[string]domain.User{},
+		users:  map[string]user.User{},
 		lock:   &sync.RWMutex{},
 		lastId: 0,
 	}
 }
 
-func (r *UserMemoryRepository) InsertUser(user domain.User) error {
+func (r *UserMemoryRepository) InsertUser(user *user.User) error {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
 	r.lastId++
-	user.ID = r.lastId
-	r.users[user.Email] = user
+	err := user.SetID(r.lastId)
+	if err != nil {
+		return err
+	}
+	r.users[user.Email()] = *user
 
 	return nil
 }
 
-func (r *UserMemoryRepository) GetUserByEmail(email string) (*domain.User, error) {
+func (r *UserMemoryRepository) UpdateUser(user *user.User) error {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+
+	r.users[user.Email()] = *user
+
+	return nil
+}
+
+func (r *UserMemoryRepository) GetUserByEmail(email string) (*user.User, error) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 
-	user, ok := r.users[email]
+	u, ok := r.users[email]
 	if ok {
-		return &user, nil
+		return &u, nil
 	}
 
 	return nil, nil
 }
 
-func (r *UserMemoryRepository) GetUserByUUID(uuid uuid.UUID) (*domain.User, error) {
+func (r *UserMemoryRepository) GetUserByUUID(uuid uuid.UUID) (*user.User, error) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 
-	for _, user := range r.users {
-		if user.UUID == uuid {
-			return &user, nil
+	for _, u := range r.users {
+		if u.UUID() == uuid {
+			return &u, nil
 		}
 	}
 

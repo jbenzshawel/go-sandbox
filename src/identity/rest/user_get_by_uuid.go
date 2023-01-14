@@ -17,6 +17,7 @@ type getUserResponse struct {
 	FirstName     string    `json:"firstName"`
 	LastName      string    `json:"lastName"`
 	Email         string    `json:"email"`
+	EmailVerified bool      `json:"emailVerified"`
 	Enabled       bool      `json:"enabled"`
 	CreatedAt     time.Time `json:"createdAt"`
 	LastUpdatedAt time.Time `json:"lastUpdatedAt"`
@@ -35,7 +36,7 @@ func (s *HttpHandler) GetUserByUUID(ctx *gin.Context) {
 		return
 	}
 
-	user, err := s.application.Queries.UserByUUID.Handle(ctx, query.UserByUUID{UUID: userUUID})
+	user, err := s.app.Queries.UserByUUID.Handle(ctx, query.UserByUUID{UUID: userUUID})
 	if err != nil {
 		crest.HandleErrorResponse(ctx, err)
 		return
@@ -46,13 +47,14 @@ func (s *HttpHandler) GetUserByUUID(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusCreated, &getUserResponse{
-		ID:            user.ID,
-		UUID:          user.UUID,
-		FirstName:     user.FirstName,
-		LastName:      user.LastName,
-		Email:         user.Email,
-		Enabled:       user.Enabled,
-		CreatedAt:     user.CreatedAt,
-		LastUpdatedAt: user.LastUpdatedAt,
+		ID:            user.ID(),
+		UUID:          user.UUID(),
+		FirstName:     user.FirstName(),
+		LastName:      user.LastName(),
+		Email:         user.Email(),
+		EmailVerified: user.EmailVerified(),
+		Enabled:       user.Enabled(),
+		CreatedAt:     user.CreatedAt(),
+		LastUpdatedAt: user.LastUpdatedAt(),
 	})
 }

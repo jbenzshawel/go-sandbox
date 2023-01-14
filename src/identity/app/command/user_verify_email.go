@@ -8,7 +8,8 @@ import (
 
 	"github.com/jbenzshawel/go-sandbox/common/cerror"
 	"github.com/jbenzshawel/go-sandbox/common/decorator"
-	"github.com/jbenzshawel/go-sandbox/identity/domain"
+	"github.com/jbenzshawel/go-sandbox/identity/domain/token"
+	"github.com/jbenzshawel/go-sandbox/identity/domain/user"
 	"github.com/jbenzshawel/go-sandbox/identity/infrastructure/idp"
 )
 
@@ -20,14 +21,14 @@ type VerifyEmail struct {
 type VerifyEmailHandler decorator.CommandHandler[VerifyEmail]
 
 type verifyEmailHandler struct {
-	userRepo         domain.UserRepository
-	tokenRepo        domain.TokenRepository
+	userRepo         user.Repository
+	tokenRepo        token.Repository
 	identityProvider idp.IdentityProvider
 }
 
 func NewVerifyEmailHandler(
-	userRepo domain.UserRepository,
-	tokenRepo domain.TokenRepository,
+	userRepo user.Repository,
+	tokenRepo token.Repository,
 	identityProvider idp.IdentityProvider,
 	logger *logrus.Entry,
 ) VerifyEmailHandler {
@@ -58,15 +59,31 @@ func NewVerifyEmailHandler(
 }
 
 func (h verifyEmailHandler) Handle(ctx context.Context, cmd VerifyEmail) error {
-	verificationToken := h.tokenRepo.GetToken(cmd.UserId)
+	isValid := token.Verify(h.tokenRepo, cmd.UserId, cmd.Code)
 
-	if verificationToken != cmd.Code {
+	if !isValid {
 		return cerror.NewValidationError("bad request", map[string]string{"code": "email verification link expired"})
 	}
 
-	h.tokenRepo.ClearToken(cmd.UserId)
+	u, err := h.userRepo.GetUserByUUID(cmd.UserId)
+	if err != nil {
+		return err
+	}
 
-	// TODO: Set email verified in db and keycloak
+	u.SetEmailVerified(true)
+
+	return h.updateUser(ctx, u)
+}
+
+func (h verifyEmailHandler) updateUser(ctx context.Context, u *user.User) error {
+	err := h.identityProvider.UpdateUser(ctx, u)
+	if err != nil {
+		return err
+	}
+	err = h.userRepo.UpdateUser(u)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

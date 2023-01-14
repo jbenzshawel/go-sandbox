@@ -1,4 +1,4 @@
-package domain
+package user
 
 import (
 	"github.com/google/uuid"
@@ -9,7 +9,12 @@ type MockUserRepository struct {
 	mock.Mock
 }
 
-func (r *MockUserRepository) InsertUser(user User) error {
+func (r *MockUserRepository) InsertUser(user *User) error {
+	args := r.Called(user)
+	return args.Error(0)
+}
+
+func (r *MockUserRepository) UpdateUser(user *User) error {
 	args := r.Called(user)
 	return args.Error(0)
 }

@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"testing"
 
+	user2 "github.com/jbenzshawel/go-sandbox/identity/domain/user"
+
 	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
@@ -14,7 +16,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/jbenzshawel/go-sandbox/identity/domain"
 	"github.com/jbenzshawel/go-sandbox/identity/infrastructure/idp"
 	"github.com/jbenzshawel/go-sandbox/identity/infrastructure/storage"
 )
@@ -45,11 +46,11 @@ func TestRegisterUserHandler(t *testing.T) {
 	user, err := userRepo.GetUserByEmail(cmd.Email)
 	require.NoError(t, err)
 	require.NotNil(t, user)
-	assert.Equal(t, fakeUserID, user.UUID)
-	assert.Equal(t, cmd.FirstName, user.FirstName)
-	assert.Equal(t, cmd.LastName, user.LastName)
-	assert.Equal(t, cmd.Email, user.Email)
-	assert.True(t, user.Enabled)
+	assert.Equal(t, fakeUserID, user.UUID())
+	assert.Equal(t, cmd.FirstName, user.FirstName())
+	assert.Equal(t, cmd.LastName, user.LastName())
+	assert.Equal(t, cmd.Email, user.Email())
+	assert.True(t, user.Enabled())
 
 	mockIDP.AssertExpectations(t)
 }
@@ -121,8 +122,8 @@ func TestRegisterUserHandler_RepoInsertUserFails(t *testing.T) {
 		Return(nil).
 		Once()
 
-	mockRepo := &domain.MockUserRepository{}
-	var user *domain.User
+	mockRepo := &user2.MockUserRepository{}
+	var user *user2.User
 	mockRepo.On("GetUserByEmail", fakeEmail).
 		Return(user, nil).
 		Once()
@@ -147,7 +148,7 @@ func TestRegisterUserHandler_RepoInsertUserFails(t *testing.T) {
 	mockRepo.AssertExpectations(t)
 }
 
-func getUserRepo() domain.UserRepository {
+func getUserRepo() user2.Repository {
 	if userSqlRepo, ok := storage.TryCreateUserSqlRepository(); ok {
 		return userSqlRepo
 	}

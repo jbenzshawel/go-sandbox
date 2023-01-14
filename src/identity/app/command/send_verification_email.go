@@ -2,7 +2,6 @@ package command
 
 import (
 	"context"
-	"crypto/rand"
 	"net/url"
 
 	"github.com/google/uuid"
@@ -11,7 +10,7 @@ import (
 
 	"github.com/jbenzshawel/go-sandbox/common/decorator"
 	"github.com/jbenzshawel/go-sandbox/common/messaging"
-	"github.com/jbenzshawel/go-sandbox/identity/domain"
+	"github.com/jbenzshawel/go-sandbox/identity/domain/token"
 )
 
 type SendVerificationEmail struct {
@@ -23,13 +22,13 @@ type SendVerificationEmail struct {
 type SendVerificationEmailHandler decorator.CommandHandler[SendVerificationEmail]
 
 type sendVerificationEmailHandler struct {
-	tokenRepo       domain.TokenRepository
+	tokenRepo       token.Repository
 	verificationURL *url.URL
 	publisher       messaging.Publisher
 }
 
 func NewSendVerificationEmailHandler(
-	tokenRepo domain.TokenRepository,
+	tokenRepo token.Repository,
 	verificationURL *url.URL,
 	publisher messaging.Publisher,
 	logger *logrus.Entry,
@@ -61,22 +60,22 @@ func NewSendVerificationEmailHandler(
 }
 
 func (h sendVerificationEmailHandler) Handle(ctx context.Context, cmd SendVerificationEmail) error {
-	token, err := generateToken()
+	t, err := token.NewToken()
 	if err != nil {
 		return err
 	}
 
-	h.tokenRepo.SaveToken(cmd.UserUUID, token)
+	h.tokenRepo.SaveToken(cmd.UserUUID, t)
 
 	v := url.Values{}
-	v.Set("token", token)
+	v.Set("code", t.Code())
 	v.Set("id", cmd.UserUUID.String())
 
 	msgBytes, err := msgpack.Marshal(&messaging.VerifyEmail{
 		UserUUID:        cmd.UserUUID,
 		FirstName:       cmd.FirstName,
 		Email:           cmd.Email,
-		Code:            token,
+		Code:            t.Code(),
 		VerificationURL: h.verificationURL.String() + "?" + v.Encode(),
 	})
 	if err != nil {
@@ -84,21 +83,4 @@ func (h sendVerificationEmailHandler) Handle(ctx context.Context, cmd SendVerifi
 	}
 
 	return h.publisher.Publish(messaging.TOPIC_VERIFY_EMAIL, msgBytes)
-}
-
-const tokenChars = "1234567890"
-
-func generateToken() (string, error) {
-	buffer := make([]byte, 6)
-	_, err := rand.Read(buffer)
-	if err != nil {
-		return "", err
-	}
-
-	tokenCharsLength := len(tokenChars)
-	for i := 0; i < 6; i++ {
-		buffer[i] = tokenChars[int(buffer[i])%tokenCharsLength]
-	}
-
-	return string(buffer), nil
 }

@@ -13,7 +13,7 @@ import (
 	"github.com/jbenzshawel/go-sandbox/common/messaging"
 	"github.com/jbenzshawel/go-sandbox/identity/app/command"
 	"github.com/jbenzshawel/go-sandbox/identity/app/query"
-	"github.com/jbenzshawel/go-sandbox/identity/domain"
+	"github.com/jbenzshawel/go-sandbox/identity/domain/user"
 	"github.com/jbenzshawel/go-sandbox/identity/infrastructure/idp"
 	"github.com/jbenzshawel/go-sandbox/identity/infrastructure/storage"
 )
@@ -27,6 +27,7 @@ type Application struct {
 type Commands struct {
 	CreateUser            command.UserCreateHandler
 	SendVerificationEmail command.SendVerificationEmailHandler
+	VerifyEmail           command.VerifyEmailHandler
 }
 
 type Queries struct {
@@ -58,6 +59,7 @@ func NewApplication(publisher messaging.Publisher) Application {
 				publisher,
 				logger,
 			),
+			VerifyEmail: command.NewVerifyEmailHandler(userRepo, verificationTokenRepo, identityProvider, logger),
 		},
 		Queries: Queries{
 			UserByEmail: query.NewUserByEmailHandler(userRepo, logger),
@@ -71,7 +73,7 @@ func DbProvider() (*sql.DB, error) {
 	return sql.Open("postgres", os.Getenv("IDENTITY_POSTGRES"))
 }
 
-func getUserRepo() domain.UserRepository {
+func getUserRepo() user.Repository {
 	if userSqlRepo, ok := storage.TryCreateUserSqlRepository(); ok {
 		return userSqlRepo
 	}

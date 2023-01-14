@@ -22,6 +22,7 @@ type usersTable struct {
 	FirstName     postgres.ColumnString
 	LastName      postgres.ColumnString
 	Email         postgres.ColumnString
+	EmailVerified postgres.ColumnBool
 	Enabled       postgres.ColumnBool
 	CreatedAt     postgres.ColumnTimestamp
 	LastUpdatedAt postgres.ColumnTimestamp
@@ -70,11 +71,12 @@ func newUsersTableImpl(schemaName, tableName, alias string) usersTable {
 		FirstNameColumn     = postgres.StringColumn("first_name")
 		LastNameColumn      = postgres.StringColumn("last_name")
 		EmailColumn         = postgres.StringColumn("email")
+		EmailVerifiedColumn = postgres.BoolColumn("email_verified")
 		EnabledColumn       = postgres.BoolColumn("enabled")
 		CreatedAtColumn     = postgres.TimestampColumn("created_at")
 		LastUpdatedAtColumn = postgres.TimestampColumn("last_updated_at")
-		allColumns          = postgres.ColumnList{IDColumn, UUIDColumn, FirstNameColumn, LastNameColumn, EmailColumn, EnabledColumn, CreatedAtColumn, LastUpdatedAtColumn}
-		mutableColumns      = postgres.ColumnList{UUIDColumn, FirstNameColumn, LastNameColumn, EmailColumn, EnabledColumn, CreatedAtColumn, LastUpdatedAtColumn}
+		allColumns          = postgres.ColumnList{IDColumn, UUIDColumn, FirstNameColumn, LastNameColumn, EmailColumn, EmailVerifiedColumn, EnabledColumn, CreatedAtColumn, LastUpdatedAtColumn}
+		mutableColumns      = postgres.ColumnList{UUIDColumn, FirstNameColumn, LastNameColumn, EmailColumn, EmailVerifiedColumn, EnabledColumn, CreatedAtColumn, LastUpdatedAtColumn}
 	)
 
 	return usersTable{
@@ -86,6 +88,7 @@ func newUsersTableImpl(schemaName, tableName, alias string) usersTable {
 		FirstName:     FirstNameColumn,
 		LastName:      LastNameColumn,
 		Email:         EmailColumn,
+		EmailVerified: EmailVerifiedColumn,
 		Enabled:       EnabledColumn,
 		CreatedAt:     CreatedAtColumn,
 		LastUpdatedAt: LastUpdatedAtColumn,

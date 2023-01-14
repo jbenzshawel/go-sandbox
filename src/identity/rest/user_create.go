@@ -31,12 +31,12 @@ type createUserResponse struct {
 func (s *HttpHandler) CreateUser(ctx *gin.Context) {
 	var user createUserRequest
 	if err := ctx.BindJSON(&user); err != nil {
-		s.application.Logger.Error(err)
-		ctx.IndentedJSON(http.StatusBadRequest, cerror.NewValidationError("invalid JSON", nil))
+		s.app.Logger.Error(err)
+		ctx.JSON(http.StatusBadRequest, cerror.NewValidationError("invalid JSON", nil))
 		return
 	}
 
-	err := s.application.Commands.CreateUser.Handle(ctx, command.UserCreate{
+	err := s.app.Commands.CreateUser.Handle(ctx, command.UserCreate{
 		FirstName:       user.FirstName,
 		LastName:        user.LastName,
 		Email:           user.Email,
@@ -48,27 +48,27 @@ func (s *HttpHandler) CreateUser(ctx *gin.Context) {
 		return
 	}
 
-	createdUser, err := s.application.Queries.UserByEmail.Handle(ctx, query.UserByEmail{Email: user.Email})
+	createdUser, err := s.app.Queries.UserByEmail.Handle(ctx, query.UserByEmail{Email: user.Email})
 	if err != nil {
 		crest.HandleErrorResponse(ctx, err)
 		return
 	}
 
-	err = s.application.Commands.SendVerificationEmail.Handle(ctx, command.SendVerificationEmail{
-		UserUUID:  createdUser.UUID,
-		FirstName: createdUser.FirstName,
-		Email:     createdUser.Email,
+	err = s.app.Commands.SendVerificationEmail.Handle(ctx, command.SendVerificationEmail{
+		UserUUID:  createdUser.UUID(),
+		FirstName: createdUser.FirstName(),
+		Email:     createdUser.Email(),
 	})
 	if err != nil {
 		// just log error here since the user has been created. verification email can be resent
-		s.application.Logger.WithError(err).Error("failed to send verification email during create user")
+		s.app.Logger.WithError(err).Error("failed to send verification email during create user")
 	}
 
 	ctx.JSON(http.StatusCreated, &createUserResponse{
-		ID:        createdUser.ID,
-		UUID:      createdUser.UUID,
-		FirstName: createdUser.FirstName,
-		LastName:  createdUser.LastName,
-		Email:     createdUser.Email,
+		ID:        createdUser.ID(),
+		UUID:      createdUser.UUID(),
+		FirstName: createdUser.FirstName(),
+		LastName:  createdUser.LastName(),
+		Email:     createdUser.Email(),
 	})
 }

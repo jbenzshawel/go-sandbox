@@ -3,7 +3,6 @@ package command
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -11,7 +10,7 @@ import (
 
 	"github.com/jbenzshawel/go-sandbox/common/cerror"
 	"github.com/jbenzshawel/go-sandbox/common/decorator"
-	"github.com/jbenzshawel/go-sandbox/identity/domain"
+	"github.com/jbenzshawel/go-sandbox/identity/domain/user"
 	"github.com/jbenzshawel/go-sandbox/identity/infrastructure/idp"
 )
 
@@ -26,12 +25,12 @@ type UserCreate struct {
 type UserCreateHandler decorator.CommandHandler[UserCreate]
 
 type userCreateHandler struct {
-	userRepo         domain.UserRepository
+	userRepo         user.Repository
 	identityProvider idp.IdentityProvider
 }
 
 func NewCreateUserHandler(
-	userRepo domain.UserRepository,
+	userRepo user.Repository,
 	identityProvider idp.IdentityProvider,
 	logger *logrus.Entry,
 ) UserCreateHandler {
@@ -73,25 +72,34 @@ func (h userCreateHandler) Handle(ctx context.Context, cmd UserCreate) error {
 	}
 
 	if len(validationErrors) > 0 {
-		return cerror.NewValidationError("Invalid request", validationErrors)
+		return cerror.NewValidationError("invalid user", validationErrors)
 	}
 
-	user := domain.User{
-		FirstName:     cmd.FirstName,
-		LastName:      cmd.LastName,
-		Email:         cmd.Email,
-		Enabled:       true,
-		CreatedAt:     time.Now(),
-		LastUpdatedAt: time.Now(),
+	u, err := user.NewUser(
+		cmd.FirstName,
+		cmd.LastName,
+		cmd.Email,
+		false,
+		true,
+	)
+	if err != nil {
+		return err
 	}
 
-	userUUID, err := h.identityProvider.CreateUser(ctx, user, cmd.Password)
+	return h.createUser(ctx, cmd, u)
+}
+
+func (h userCreateHandler) createUser(ctx context.Context, cmd UserCreate, u *user.User) error {
+	userUUID, err := h.identityProvider.CreateUser(ctx, u, cmd.Password)
 	if err != nil {
 		return h.handleCreateUserErr(ctx, userUUID, err)
 	}
-	user.UUID = userUUID
+	err = u.SetUUID(userUUID)
+	if err != nil {
+		return h.handleCreateUserErr(ctx, userUUID, err)
+	}
 
-	err = h.userRepo.InsertUser(user)
+	err = h.userRepo.InsertUser(u)
 	if err != nil {
 		return h.handleCreateUserErr(ctx, userUUID, err)
 	}
