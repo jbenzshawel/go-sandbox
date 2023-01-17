@@ -28,15 +28,15 @@ type createUserResponse struct {
 	Email     string    `json:"email"`
 }
 
-func (s *HttpHandler) CreateUser(ctx *gin.Context) {
+func (h *HttpHandler) CreateUser(ctx *gin.Context) {
 	var user createUserRequest
 	if err := ctx.BindJSON(&user); err != nil {
-		s.app.Logger.Error(err)
+		h.app.Logger.Error(err)
 		ctx.JSON(http.StatusBadRequest, cerror.NewValidationError("invalid JSON", nil))
 		return
 	}
 
-	err := s.app.Commands.CreateUser.Handle(ctx, command.UserCreate{
+	err := h.app.Commands.CreateUser.Handle(ctx, command.UserCreate{
 		FirstName:       user.FirstName,
 		LastName:        user.LastName,
 		Email:           user.Email,
@@ -48,20 +48,20 @@ func (s *HttpHandler) CreateUser(ctx *gin.Context) {
 		return
 	}
 
-	createdUser, err := s.app.Queries.UserByEmail.Handle(ctx, query.UserByEmail{Email: user.Email})
+	createdUser, err := h.app.Queries.UserByEmail.Handle(ctx, query.UserByEmail{Email: user.Email})
 	if err != nil {
 		crest.HandleErrorResponse(ctx, err)
 		return
 	}
 
-	err = s.app.Commands.SendVerificationEmail.Handle(ctx, command.SendVerificationEmail{
+	err = h.app.Commands.SendVerificationEmail.Handle(ctx, command.SendVerificationEmail{
 		UserUUID:  createdUser.UUID(),
 		FirstName: createdUser.FirstName(),
 		Email:     createdUser.Email(),
 	})
 	if err != nil {
 		// just log error here since the user has been created. verification email can be resent
-		s.app.Logger.WithError(err).Error("failed to send verification email during create user")
+		h.app.Logger.WithError(err).Error("failed to send verification email during create user")
 	}
 
 	ctx.JSON(http.StatusCreated, &createUserResponse{

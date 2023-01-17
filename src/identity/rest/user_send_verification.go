@@ -5,25 +5,26 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/jbenzshawel/go-sandbox/common/cerror"
 	crest "github.com/jbenzshawel/go-sandbox/common/rest"
 	"github.com/jbenzshawel/go-sandbox/identity/app/command"
+	"github.com/jbenzshawel/go-sandbox/identity/app/query"
 	"github.com/jbenzshawel/go-sandbox/identity/domain/token"
 )
 
-type verifyUserRequest struct {
-	Code             string `json:"code"`
+type sendVerificationRequest struct {
 	VerificationType string `json:"verificationType"`
 }
 
-func (h *HttpHandler) VerifyUser(ctx *gin.Context) {
+func (h *HttpHandler) SendVerification(ctx *gin.Context) {
 	userUUID, ok := h.parseUUIDParam(ctx)
 	if !ok {
 		ctx.AbortWithStatus(http.StatusNotFound)
 		return
 	}
 
-	var r verifyUserRequest
+	var r sendVerificationRequest
 	var err error
 	if err = ctx.BindJSON(&r); err != nil {
 		h.app.Logger.Error(err)
@@ -38,11 +39,22 @@ func (h *HttpHandler) VerifyUser(ctx *gin.Context) {
 		return
 	}
 
+	u, err := h.app.Queries.UserByUUID.Handle(ctx, query.UserByUUID{UUID: userUUID})
+	if err != nil {
+		crest.HandleErrorResponse(ctx, err)
+		return
+	}
+	if u == nil {
+		ctx.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+
 	switch verificationType {
 	case token.Email:
-		err = h.app.Commands.VerifyEmail.Handle(ctx, command.VerifyEmail{
-			UserId: userUUID,
-			Code:   r.Code,
+		err = h.app.Commands.SendVerificationEmail.Handle(ctx, command.SendVerificationEmail{
+			UserUUID:  userUUID,
+			FirstName: u.FirstName(),
+			Email:     u.Email(),
 		})
 		// TODO: support additional verification methods
 	}

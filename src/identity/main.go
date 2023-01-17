@@ -23,6 +23,7 @@ func main() {
 	router.GET("/health", httpHandler.HealthCheck)
 
 	router.POST("/user", httpHandler.CreateUser)
+	router.POST("/user/:uuid/send-verification", httpHandler.SendVerification)
 	router.POST("/user/:uuid/verify", httpHandler.VerifyUser)
 	router.GET("/user/:uuid", httpHandler.GetUserByUUID)
 

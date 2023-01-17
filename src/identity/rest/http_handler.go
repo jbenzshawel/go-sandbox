@@ -2,10 +2,10 @@ package rest
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/nats-io/nats.go"
-
+	"github.com/google/uuid"
 	"github.com/jbenzshawel/go-sandbox/common/rest"
 	"github.com/jbenzshawel/go-sandbox/identity/app"
+	"github.com/nats-io/nats.go"
 )
 
 type HttpHandler struct {
@@ -24,6 +24,20 @@ func NewHttpHandler(application app.Application, nc *nats.Conn) *HttpHandler {
 	}
 }
 
-func (s *HttpHandler) HealthCheck(ctx *gin.Context) {
-	s.healthCheck.Handler(ctx)
+func (h *HttpHandler) HealthCheck(ctx *gin.Context) {
+	h.healthCheck.Handler(ctx)
+}
+
+func (h *HttpHandler) parseUUIDParam(ctx *gin.Context) (uuid.UUID, bool) {
+	queryParam := ctx.Param("uuid")
+	if queryParam == "" {
+		return uuid.Nil, false
+	}
+
+	paramUUID, err := uuid.Parse(queryParam)
+	if err != nil {
+		return uuid.Nil, false
+	}
+
+	return paramUUID, true
 }

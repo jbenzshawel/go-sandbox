@@ -23,20 +23,14 @@ type getUserResponse struct {
 	LastUpdatedAt time.Time `json:"lastUpdatedAt"`
 }
 
-func (s *HttpHandler) GetUserByUUID(ctx *gin.Context) {
-	queryParam := ctx.Param("uuid")
-	if queryParam == "" {
+func (h *HttpHandler) GetUserByUUID(ctx *gin.Context) {
+	userUUID, ok := h.parseUUIDParam(ctx)
+	if !ok {
 		ctx.AbortWithStatus(http.StatusNotFound)
 		return
 	}
 
-	userUUID, err := uuid.Parse(queryParam)
-	if err != nil {
-		ctx.AbortWithStatus(http.StatusNotFound)
-		return
-	}
-
-	user, err := s.app.Queries.UserByUUID.Handle(ctx, query.UserByUUID{UUID: userUUID})
+	user, err := h.app.Queries.UserByUUID.Handle(ctx, query.UserByUUID{UUID: userUUID})
 	if err != nil {
 		crest.HandleErrorResponse(ctx, err)
 		return
