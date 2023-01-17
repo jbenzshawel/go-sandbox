@@ -55,6 +55,8 @@ func (m *ExpirationMap[K, V]) Set(k K, v V) {
 			value: v,
 		}
 		m.m[k] = it
+	} else {
+		it.value = v
 	}
 	it.insertedAt = time.Now().UnixMilli()
 	it.lastAccess = it.insertedAt

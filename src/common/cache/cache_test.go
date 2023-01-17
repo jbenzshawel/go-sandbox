@@ -28,6 +28,11 @@ func TestExpirationMap_Set(t *testing.T) {
 	assert.GreaterOrEqual(t, cachedItem.insertedAt, now)
 	assert.GreaterOrEqual(t, cachedItem.lastAccess, now)
 	assert.Equal(t, cachedItem.insertedAt, cachedItem.lastAccess)
+
+	expMap.Set("key", "updated value")
+	cachedItem = expMap.m["key"]
+	assert.Equal(t, "updated value", cachedItem.value)
+	assert.GreaterOrEqual(t, cachedItem.lastAccess, now)
 }
 
 func TestExpirationMap_Get(t *testing.T) {
