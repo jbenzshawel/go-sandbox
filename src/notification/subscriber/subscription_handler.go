@@ -12,22 +12,22 @@ import (
 )
 
 type SubscriptionHandler struct {
-	application app.Application
+	app app.Application
 }
 
 func NewSubscriptionHandler(application app.Application) *SubscriptionHandler {
-	return &SubscriptionHandler{application: application}
+	return &SubscriptionHandler{app: application}
 }
 
 func (s *SubscriptionHandler) SendVerificationEmail(msg []byte) {
 	var message messaging.VerifyEmail
 	err := msgpack.Unmarshal(msg, &message)
 	if err != nil {
-		s.application.Logger.WithError(errors.WithStack(err)).Error("failed to unmarshal VerifyEmail message")
+		s.app.Logger.WithError(errors.WithStack(err)).Error("failed to unmarshal VerifyEmail message")
 		return
 	}
 
-	s.application.Logger.WithField("VerifyEmail", message).
+	s.app.Logger.WithField("VerifyEmail", message).
 		Info("VerifyEmail msg received")
 
 	cmd := command.SendVerificationEmail{
@@ -38,8 +38,8 @@ func (s *SubscriptionHandler) SendVerificationEmail(msg []byte) {
 		VerificationURL: message.VerificationURL,
 	}
 
-	err = s.application.Commands.SendVerificationEmail.Handle(context.Background(), cmd)
+	err = s.app.Commands.SendVerificationEmail.Handle(context.Background(), cmd)
 	if err != nil {
-		s.application.Logger.WithError(errors.WithStack(err)).Error("failed to handle VerifyEmail message")
+		s.app.Logger.WithError(errors.WithStack(err)).Error("failed to handle VerifyEmail message")
 	}
 }

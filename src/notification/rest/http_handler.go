@@ -9,13 +9,13 @@ import (
 )
 
 type HttpHandler struct {
-	application app.Application
+	app         app.Application
 	healthCheck *rest.HealthCheckHandler
 }
 
 func NewHttpHandler(application app.Application, nc *nats.Conn) *HttpHandler {
 	return &HttpHandler{
-		application: application,
+		app: application,
 		healthCheck: rest.NewHealthCheckHandler(
 			application.Logger,
 			rest.GetNatsHealthCheck(nc),
