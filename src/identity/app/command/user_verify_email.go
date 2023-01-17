@@ -62,7 +62,7 @@ func (h verifyEmailHandler) Handle(ctx context.Context, cmd VerifyEmail) error {
 	isValid := token.Verify(h.tokenRepo, cmd.UserId, cmd.Code)
 
 	if !isValid {
-		return cerror.NewValidationError("bad request", map[string]string{"code": "email verification link expired"})
+		return cerror.NewValidationError("invalid token", map[string]string{"code": "email verification link expired"})
 	}
 
 	u, err := h.userRepo.GetUserByUUID(cmd.UserId)

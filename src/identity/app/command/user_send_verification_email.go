@@ -82,5 +82,5 @@ func (h sendVerificationEmailHandler) Handle(ctx context.Context, cmd SendVerifi
 		return err
 	}
 
-	return h.publisher.Publish(messaging.TOPIC_VERIFY_EMAIL, msgBytes)
+	return h.publisher.Publish(messaging.TopicVerifyEmail, msgBytes)
 }

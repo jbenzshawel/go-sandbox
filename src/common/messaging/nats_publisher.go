@@ -1,6 +1,8 @@
 package messaging
 
-import "github.com/nats-io/nats.go"
+import (
+	"github.com/nats-io/nats.go"
+)
 
 type Publisher interface {
 	Publish(topic string, msg []byte) error

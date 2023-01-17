@@ -20,7 +20,7 @@ func main() {
 
 	subscriptionHandler := subscriber.NewSubscriptionHandler(application)
 	err = messaging.NewNatsSubscriber(nc).
-		WithSubscription(messaging.TOPIC_VERIFY_EMAIL, subscriptionHandler.SendVerificationEmail).
+		WithSubscription(messaging.TopicVerifyEmail, subscriptionHandler.SendVerificationEmail).
 		Subscribe()
 
 	if err != nil {

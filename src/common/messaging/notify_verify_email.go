@@ -4,7 +4,7 @@ import (
 	"github.com/google/uuid"
 )
 
-const TOPIC_VERIFY_EMAIL = "notify.verify.email"
+const TopicVerifyEmail = "notify.verify.email"
 
 type VerifyEmail struct {
 	UserUUID        uuid.UUID `msgpack:"id"`
