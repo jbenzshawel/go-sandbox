@@ -50,16 +50,16 @@ func (m *ExpirationMap[K, V]) Set(k K, v V) {
 	startCleanup := len(m.m) == 0
 
 	it, ok := m.m[k]
-	if !ok {
+	if ok {
+		it.value = v
+	} else {
 		it = &item[V]{
 			value: v,
 		}
 		m.m[k] = it
-	} else {
-		it.value = v
+		it.insertedAt = time.Now().UnixMilli()
 	}
-	it.insertedAt = time.Now().UnixMilli()
-	it.lastAccess = it.insertedAt
+	it.lastAccess = time.Now().UnixMilli()
 
 	if startCleanup {
 		go m.startCleanup()
