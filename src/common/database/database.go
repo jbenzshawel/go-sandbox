@@ -24,21 +24,7 @@ func Query(dbProvider DbProvider, stmt SelectStatement, result interface{}) (err
 	return
 }
 
-func ExecuteInsert(dbProvider DbProvider, stmt InsertStatement) (result sql.Result, err error) {
-	db, err := dbProvider()
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		closeErr := db.Close()
-		err = cerror.CombineErrors(err, closeErr)
-	}()
-
-	result, err = stmt.Exec(db)
-	return
-}
-
-func ExecuteUpdate(dbProvider DbProvider, stmt UpdateStatement) (result sql.Result, err error) {
+func Execute(dbProvider DbProvider, stmt Statement) (result sql.Result, err error) {
 	db, err := dbProvider()
 	if err != nil {
 		return nil, err

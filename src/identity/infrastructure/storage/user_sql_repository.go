@@ -34,7 +34,7 @@ func TryCreateUserSqlRepository() (*UserSqlRepository, bool) {
 }
 
 func (r *UserSqlRepository) InsertUser(u *user.User) error {
-	_, err := database.ExecuteInsert(r.dbProvider, Users.INSERT(Users.MutableColumns).
+	_, err := database.Execute(r.dbProvider, Users.INSERT(Users.MutableColumns).
 		MODEL(model.Users{
 			UUID:          u.UUID(),
 			FirstName:     u.FirstName(),
@@ -52,7 +52,7 @@ func (r *UserSqlRepository) UpdateUser(u *user.User) error {
 	columns := ColumnList{Users.FirstName, Users.LastName, Users.Email,
 		Users.EmailVerified, Users.Enabled, Users.LastUpdatedAt}
 
-	_, err := database.ExecuteUpdate(r.dbProvider, Users.UPDATE(columns).
+	_, err := database.Execute(r.dbProvider, Users.UPDATE(columns).
 		MODEL(model.Users{
 			FirstName:     u.FirstName(),
 			LastName:      u.LastName(),
