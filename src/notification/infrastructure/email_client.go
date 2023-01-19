@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/smtp"
 	"os"
+
+	"github.com/jbenzshawel/go-sandbox/common/rest"
 )
 
 type Email struct {
@@ -22,16 +24,32 @@ type EmailClient struct {
 	smtpAddr string
 	host     string
 	from     string
+	username string
+	password string
 }
 
-func NewEmailClient(smtpAddr, host, from string) *EmailClient {
-	return &EmailClient{smtpAddr: smtpAddr, host: host, from: from}
+type EmailConfig struct {
+	Addr     string
+	Host     string
+	From     string
+	Username string
+	Password string
+}
+
+func NewEmailClient(cfg EmailConfig) *EmailClient {
+	return &EmailClient{
+		smtpAddr: cfg.Addr,
+		host:     cfg.Host,
+		from:     cfg.Password,
+		username: cfg.Username,
+		password: cfg.Password,
+	}
 }
 
 const htmlMIME = "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
 
 func (c *EmailClient) SendMail(email *Email) error {
-	auth := PlainAuth("", "", "", c.host)
+	auth := c.plainAuth()
 
 	to := []string{email.To}
 	msg := []byte(fmt.Sprintf("To: %s\n", email.To) +
@@ -42,8 +60,33 @@ func (c *EmailClient) SendMail(email *Email) error {
 		msg = append(msg, []byte("\r\n")...)
 	}
 	msg = append(msg, []byte(email.Body)...)
-	err := smtp.SendMail(c.smtpAddr, auth, c.from, to, msg)
-	return err
+	return smtp.SendMail(c.smtpAddr, auth, c.from, to, msg)
+}
+
+func (c *EmailClient) plainAuth() smtp.Auth {
+	return PlainAuth("", c.username, c.password, c.host)
+}
+
+func (c *EmailClient) HealthCheck() rest.HealthCheckTask {
+	return func() (bool, string, error) {
+		healthCheckName := "smtp"
+		ec, err := smtp.Dial(c.smtpAddr)
+		if err != nil {
+			return false, healthCheckName, err
+		}
+
+		err = ec.Auth(c.plainAuth())
+		if err != nil {
+			return false, healthCheckName, err
+		}
+
+		err = ec.Noop()
+		if err != nil {
+			return false, healthCheckName, err
+		}
+
+		return true, healthCheckName, nil
+	}
 }
 
 type plainAuth struct {

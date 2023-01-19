@@ -23,7 +23,8 @@ func (s *SubscriptionHandler) SendVerificationEmail(msg []byte) {
 	var message messaging.VerifyEmail
 	err := msgpack.Unmarshal(msg, &message)
 	if err != nil {
-		s.app.Logger.WithError(errors.WithStack(err)).Error("failed to unmarshal VerifyEmail message")
+		s.app.Logger.WithError(errors.WithStack(err)).
+			Error("failed to unmarshal VerifyEmail message")
 		return
 	}
 
@@ -40,6 +41,7 @@ func (s *SubscriptionHandler) SendVerificationEmail(msg []byte) {
 
 	err = s.app.Commands.SendVerificationEmail.Handle(context.Background(), cmd)
 	if err != nil {
-		s.app.Logger.WithError(errors.WithStack(err)).Error("failed to handle VerifyEmail message")
+		s.app.Logger.WithError(errors.WithStack(err)).
+			Error("failed to handle VerifyEmail message")
 	}
 }

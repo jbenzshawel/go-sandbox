@@ -6,6 +6,7 @@ import (
 
 	"github.com/jbenzshawel/go-sandbox/common/rest"
 	"github.com/jbenzshawel/go-sandbox/notification/app"
+	"github.com/jbenzshawel/go-sandbox/notification/infrastructure"
 )
 
 type HttpHandler struct {
@@ -13,12 +14,14 @@ type HttpHandler struct {
 	healthCheck *rest.HealthCheckHandler
 }
 
-func NewHttpHandler(application app.Application, nc *nats.Conn) *HttpHandler {
+func NewHttpHandler(app app.Application, nc *nats.Conn) *HttpHandler {
+	emailClient := infrastructure.NewEmailClient(app.Config.Email)
 	return &HttpHandler{
-		app: application,
+		app: app,
 		healthCheck: rest.NewHealthCheckHandler(
-			application.Logger,
+			app.Logger,
 			rest.GetNatsHealthCheck(nc),
+			emailClient.HealthCheck(),
 		),
 	}
 }

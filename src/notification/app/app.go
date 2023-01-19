@@ -13,13 +13,7 @@ import (
 type appConfig struct {
 	HTTPPort string
 	NATSURL  string
-	Email    emailConfig
-}
-
-type emailConfig struct {
-	Addr string
-	Host string
-	From string
+	Email    infrastructure.EmailConfig
 }
 
 type Application struct {
@@ -35,7 +29,7 @@ type Commands struct {
 func NewApplication() Application {
 	logger := logrus.NewEntry(logrus.StandardLogger())
 	config := buildConfig()
-	emailClient := infrastructure.NewEmailClient(config.Email.Addr, config.Email.Host, config.Email.From)
+	emailClient := infrastructure.NewEmailClient(config.Email)
 
 	return Application{
 		Commands: Commands{
@@ -50,10 +44,12 @@ func buildConfig() appConfig {
 	return appConfig{
 		HTTPPort: os.Getenv("NOTIFICATION_HTTP_PORT"),
 		NATSURL:  os.Getenv("NATS_URL"),
-		Email: emailConfig{
-			Addr: os.Getenv("SMTP_URL"),
-			Host: os.Getenv("SMTP_HOST"),
-			From: os.Getenv("SMTP_FROM"),
+		Email: infrastructure.EmailConfig{
+			Addr:     os.Getenv("SMTP_URL"),
+			Host:     os.Getenv("SMTP_HOST"),
+			From:     os.Getenv("SMTP_FROM"),
+			Username: os.Getenv("SMTP_USERNAME"),
+			Password: os.Getenv("SMTP_PASSWORD"),
 		},
 	}
 }
