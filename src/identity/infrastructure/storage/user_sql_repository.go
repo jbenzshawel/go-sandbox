@@ -1,12 +1,14 @@
 package storage
 
 import (
+	"context"
 	"database/sql"
 	"os"
 
 	. "github.com/go-jet/jet/v2/postgres"
 	"github.com/google/uuid"
 
+	"github.com/jbenzshawel/go-sandbox/common/cerror"
 	"github.com/jbenzshawel/go-sandbox/common/database"
 	"github.com/jbenzshawel/go-sandbox/identity/domain/user"
 	"github.com/jbenzshawel/go-sandbox/identity/infrastructure/gen/identity/identity/model"
@@ -33,8 +35,31 @@ func TryCreateUserSqlRepository() (*UserSqlRepository, bool) {
 	return nil, false
 }
 
-func (r *UserSqlRepository) CreateUser(u *user.User) error {
-	_, err := database.Execute(r.dbProvider, Users.INSERT(Users.MutableColumns).
+func (r *UserSqlRepository) CreateUser(u *user.User) (err error) {
+	db, err := r.dbProvider()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		closeErr := db.Close()
+		err = cerror.CombineErrors(err, closeErr)
+	}()
+	txn, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			rollbackErr := txn.Rollback()
+			err = cerror.CombineErrors(err, rollbackErr)
+		} else {
+			commitErr := txn.Commit()
+			err = cerror.CombineErrors(err, commitErr)
+		}
+	}()
+
+	var createdUser model.Users
+	stmt := Users.INSERT(Users.MutableColumns).
 		MODEL(model.Users{
 			UserUUID:      u.UUID(),
 			FirstName:     u.FirstName(),
@@ -43,9 +68,25 @@ func (r *UserSqlRepository) CreateUser(u *user.User) error {
 			Enabled:       u.Enabled(),
 			CreatedAt:     u.CreatedAt(),
 			LastUpdatedAt: u.LastUpdatedAt(),
-		}))
+		}).RETURNING(Users.AllColumns)
+	err = stmt.QueryContext(context.Background(), txn, &createdUser)
+	if err != nil {
+		return err
+	}
 
-	return err
+	for _, rl := range u.Roles() {
+		stmt = UserRoles.INSERT(UserRoles.UserID, UserRoles.RoleID).
+			MODEL(model.UserRoles{
+				UserID: createdUser.UserID,
+				RoleID: int32(rl.ID()),
+			})
+		_, err = stmt.ExecContext(context.Background(), txn)
+		if err != nil {
+			return err
+		}
+	}
+
+	return
 }
 
 func (r *UserSqlRepository) UpdateUser(u *user.User) error {

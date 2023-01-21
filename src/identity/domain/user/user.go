@@ -94,6 +94,10 @@ func (u *User) Enabled() bool {
 	return u.enabled
 }
 
+func (u *User) Roles() []*Role {
+	return u.roles
+}
+
 func (u *User) CreatedAt() time.Time {
 	return u.createdAt
 }
