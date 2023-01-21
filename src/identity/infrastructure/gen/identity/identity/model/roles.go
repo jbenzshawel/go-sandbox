@@ -13,14 +13,11 @@ import (
 	"github.com/google/uuid"
 )
 
-type Users struct {
-	UserID        int32 `sql:"primary_key"`
-	UserUUID      uuid.UUID
-	FirstName     string
-	LastName      string
-	Email         string
-	EmailVerified bool
-	Enabled       bool
+type Roles struct {
+	RoleID        int32 `sql:"primary_key"`
+	RoleUUID      uuid.UUID
+	Name          string
+	Description   *string
 	CreatedAt     time.Time
 	LastUpdatedAt time.Time
 }

@@ -99,7 +99,7 @@ func (h userCreateHandler) createUser(ctx context.Context, cmd UserCreate, u *us
 		return h.handleCreateUserErr(ctx, userUUID, err)
 	}
 
-	err = h.userRepo.InsertUser(u)
+	err = h.userRepo.CreateUser(u)
 	if err != nil {
 		return h.handleCreateUserErr(ctx, userUUID, err)
 	}

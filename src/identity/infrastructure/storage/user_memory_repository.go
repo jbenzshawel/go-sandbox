@@ -11,7 +11,7 @@ import (
 type UserMemoryRepository struct {
 	users  map[string]user.User
 	lock   *sync.RWMutex
-	lastId int32
+	lastId int
 }
 
 func NewUserMemoryRepository() *UserMemoryRepository {
@@ -22,7 +22,7 @@ func NewUserMemoryRepository() *UserMemoryRepository {
 	}
 }
 
-func (r *UserMemoryRepository) InsertUser(user *user.User) error {
+func (r *UserMemoryRepository) CreateUser(user *user.User) error {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 

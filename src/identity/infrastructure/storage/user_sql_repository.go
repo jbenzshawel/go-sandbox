@@ -33,10 +33,10 @@ func TryCreateUserSqlRepository() (*UserSqlRepository, bool) {
 	return nil, false
 }
 
-func (r *UserSqlRepository) InsertUser(u *user.User) error {
+func (r *UserSqlRepository) CreateUser(u *user.User) error {
 	_, err := database.Execute(r.dbProvider, Users.INSERT(Users.MutableColumns).
 		MODEL(model.Users{
-			UUID:          u.UUID(),
+			UserUUID:      u.UUID(),
 			FirstName:     u.FirstName(),
 			LastName:      u.LastName(),
 			Email:         u.Email(),
@@ -61,51 +61,143 @@ func (r *UserSqlRepository) UpdateUser(u *user.User) error {
 			Enabled:       u.Enabled(),
 			LastUpdatedAt: u.LastUpdatedAt(),
 		}).
-		WHERE(Users.UUID.EQ(UUID(u.UUID()))))
+		WHERE(Users.UserUUID.EQ(UUID(u.UUID()))))
 
 	return err
 }
 
 func (r *UserSqlRepository) GetUserByEmail(email string) (*user.User, error) {
-	return r.queryForUser(
-		SELECT(Users.AllColumns).
-			FROM(Users).
-			WHERE(Users.Email.EQ(String(email))),
-	)
+	return r.queryForUser(Users.Email.EQ(String(email)))
 }
 
 func (r *UserSqlRepository) GetUserByUUID(uuid uuid.UUID) (*user.User, error) {
-	return r.queryForUser(
-		SELECT(Users.AllColumns).
-			FROM(Users).
-			WHERE(Users.UUID.EQ(UUID(uuid))),
-	)
+	return r.queryForUser(Users.UserUUID.EQ(UUID(uuid)))
 }
 
-func (r *UserSqlRepository) queryForUser(stmt SelectStatement) (*user.User, error) {
-	var users []model.Users
-	err := database.Query(r.dbProvider, stmt, &users)
+func (r *UserSqlRepository) queryForUser(predicate BoolExpression) (*user.User, error) {
+	stmt := Users.
+		LEFT_JOIN(UserRoles, UserRoles.UserID.EQ(Users.UserID)).
+		LEFT_JOIN(Roles, Roles.RoleID.EQ(UserRoles.RoleID)).
+		LEFT_JOIN(Permissions, Permissions.PermissionID.EQ(Roles.RoleID)).
+		SELECT(Users.AllColumns, Roles.AllColumns, Permissions.AllColumns).
+		WHERE(predicate)
+
+	var dest []userQueryResult
+	err := database.Query(r.dbProvider, stmt, &dest)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(users) > 0 {
-		return mapToDomain(users[0])
+	if len(dest) > 0 {
+		return mapUser(dest[0])
 	}
 
 	return nil, nil
 }
 
-func mapToDomain(u model.Users) (*user.User, error) {
+type userQueryResult struct {
+	model.Users
+
+	Roles []*struct {
+		model.Roles
+
+		Permissions []*struct {
+			model.Permissions
+		}
+	}
+}
+
+func mapUser(result userQueryResult) (*user.User, error) {
+	roles, err := mapRoles(result)
+	if err != nil {
+		return nil, err
+	}
+
 	return user.FromDatabase(
-		u.ID,
-		u.UUID,
-		u.FirstName,
-		u.LastName,
-		u.Email,
-		u.EmailVerified,
-		u.Enabled,
-		u.CreatedAt,
-		u.LastUpdatedAt,
+		int(result.UserID),
+		result.UserUUID,
+		result.FirstName,
+		result.LastName,
+		result.Email,
+		result.EmailVerified,
+		result.Enabled,
+		roles,
+		result.CreatedAt,
+		result.LastUpdatedAt,
 	)
+}
+
+func mapRoles(dest userQueryResult) ([]*user.Role, error) {
+	var roles []*user.Role
+	var err error
+	for _, r := range dest.Roles {
+		if r == nil {
+			break
+		}
+		var permissions []*user.Permission
+		for _, p := range r.Permissions {
+			if p == nil {
+				break
+			}
+			permissions, err = appendPermission(permissions, p)
+			if err != nil {
+				return nil, err
+			}
+		}
+		roles, err = appendRole(roles, r, permissions)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return roles, nil
+}
+
+func appendPermission(
+	permissions []*user.Permission,
+	p *struct{ model.Permissions },
+) ([]*user.Permission, error) {
+	var description string
+	if p.Description != nil {
+		description = *p.Description
+	}
+	permission, err := user.PermissionFromDatabase(
+		int(p.PermissionID),
+		p.PermissionUUID,
+		p.Name,
+		description,
+		p.CreatedAt,
+		p.LastUpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	permissions = append(permissions, permission)
+	return permissions, nil
+}
+
+func appendRole(roles []*user.Role,
+	r *struct {
+		model.Roles
+		Permissions []*struct{ model.Permissions }
+	},
+	permissions []*user.Permission,
+) ([]*user.Role, error) {
+	var description string
+	if r.Description != nil {
+		description = *r.Description
+	}
+	role, err := user.RoleFromDatabase(
+		int(r.RoleID),
+		r.RoleUUID,
+		r.Name,
+		description,
+		permissions,
+		r.CreatedAt,
+		r.LastUpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	roles = append(roles, role)
+	return roles, nil
 }

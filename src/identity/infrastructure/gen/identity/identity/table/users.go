@@ -17,8 +17,8 @@ type usersTable struct {
 	postgres.Table
 
 	//Columns
-	ID            postgres.ColumnInteger
-	UUID          postgres.ColumnString
+	UserID        postgres.ColumnInteger
+	UserUUID      postgres.ColumnString
 	FirstName     postgres.ColumnString
 	LastName      postgres.ColumnString
 	Email         postgres.ColumnString
@@ -66,8 +66,8 @@ func newUsersTable(schemaName, tableName, alias string) *UsersTable {
 
 func newUsersTableImpl(schemaName, tableName, alias string) usersTable {
 	var (
-		IDColumn            = postgres.IntegerColumn("id")
-		UUIDColumn          = postgres.StringColumn("uuid")
+		UserIDColumn        = postgres.IntegerColumn("user_id")
+		UserUUIDColumn      = postgres.StringColumn("user_uuid")
 		FirstNameColumn     = postgres.StringColumn("first_name")
 		LastNameColumn      = postgres.StringColumn("last_name")
 		EmailColumn         = postgres.StringColumn("email")
@@ -75,16 +75,16 @@ func newUsersTableImpl(schemaName, tableName, alias string) usersTable {
 		EnabledColumn       = postgres.BoolColumn("enabled")
 		CreatedAtColumn     = postgres.TimestampColumn("created_at")
 		LastUpdatedAtColumn = postgres.TimestampColumn("last_updated_at")
-		allColumns          = postgres.ColumnList{IDColumn, UUIDColumn, FirstNameColumn, LastNameColumn, EmailColumn, EmailVerifiedColumn, EnabledColumn, CreatedAtColumn, LastUpdatedAtColumn}
-		mutableColumns      = postgres.ColumnList{UUIDColumn, FirstNameColumn, LastNameColumn, EmailColumn, EmailVerifiedColumn, EnabledColumn, CreatedAtColumn, LastUpdatedAtColumn}
+		allColumns          = postgres.ColumnList{UserIDColumn, UserUUIDColumn, FirstNameColumn, LastNameColumn, EmailColumn, EmailVerifiedColumn, EnabledColumn, CreatedAtColumn, LastUpdatedAtColumn}
+		mutableColumns      = postgres.ColumnList{UserUUIDColumn, FirstNameColumn, LastNameColumn, EmailColumn, EmailVerifiedColumn, EnabledColumn, CreatedAtColumn, LastUpdatedAtColumn}
 	)
 
 	return usersTable{
 		Table: postgres.NewTable(schemaName, tableName, alias, allColumns...),
 
 		//Columns
-		ID:            IDColumn,
-		UUID:          UUIDColumn,
+		UserID:        UserIDColumn,
+		UserUUID:      UserUUIDColumn,
 		FirstName:     FirstNameColumn,
 		LastName:      LastNameColumn,
 		Email:         EmailColumn,

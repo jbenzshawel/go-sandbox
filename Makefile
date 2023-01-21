@@ -21,9 +21,9 @@ jet-identity: # scaffold identity db tables for go db access
 	@./scripts/jet-identity.sh
 
 .PHONY: docker-up 
-docker-up: # run web services in docker
+docker-up: # start services in docker
 	docker compose up -d --build
 
 .PHONY: docker-down 
-docker-down: # stop web services in docker
+docker-down: # stop services in docker
 	docker compose down

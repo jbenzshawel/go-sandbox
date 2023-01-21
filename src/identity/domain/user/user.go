@@ -10,7 +10,7 @@ import (
 )
 
 type User struct {
-	id   int32
+	id   int
 	uuid uuid.UUID
 
 	firstName     string
@@ -18,6 +18,8 @@ type User struct {
 	email         string
 	emailVerified bool
 	enabled       bool
+
+	roles []*Role
 
 	createdAt     time.Time
 	lastUpdatedAt time.Time
@@ -50,20 +52,21 @@ func NewUser(firstName, lastName, email string, emailVerified, enabled bool) (*U
 	}, nil
 }
 
-func FromDatabase(id int32, userUUID uuid.UUID, firstName, lastName, email string,
-	emailVerified, enabled bool, createdAt, lastUpdatedAt time.Time) (*User, error) {
+func FromDatabase(id int, userUUID uuid.UUID, firstName, lastName, email string,
+	emailVerified, enabled bool, roles []*Role, createdAt, lastUpdatedAt time.Time) (*User, error) {
 	u, err := NewUser(firstName, lastName, email, emailVerified, enabled)
 	if err != nil {
 		return nil, err
 	}
 	u.id = id
 	u.uuid = userUUID
+	u.roles = roles
 	u.createdAt = createdAt
 	u.lastUpdatedAt = lastUpdatedAt
 	return u, nil
 }
 
-func (u *User) ID() int32 {
+func (u *User) ID() int {
 	return u.id
 }
 
@@ -99,7 +102,7 @@ func (u *User) LastUpdatedAt() time.Time {
 	return u.lastUpdatedAt
 }
 
-func (u *User) SetID(id int32) error {
+func (u *User) SetID(id int) error {
 	if id < 1 {
 		return errors.New("user id must be greater than 0")
 	}

@@ -21,7 +21,7 @@ type createUserRequest struct {
 }
 
 type createUserResponse struct {
-	ID        int32     `json:"id"`
+	ID        int       `json:"id"`
 	UUID      uuid.UUID `json:"uuid"`
 	FirstName string    `json:"firstName"`
 	LastName  string    `json:"lastName"`

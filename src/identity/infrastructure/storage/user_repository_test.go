@@ -22,7 +22,7 @@ func TestUserRepository(t *testing.T) {
 			var u *user.User
 			var err error
 
-			t.Run("InsertUser", func(t *testing.T) {
+			t.Run("CreateUser", func(t *testing.T) {
 				u, err = user.NewUser(
 					"TestFirstName",
 					"TestLastName",
@@ -32,7 +32,7 @@ func TestUserRepository(t *testing.T) {
 				)
 				require.NoError(t, err)
 				require.NoError(t, u.SetUUID(uuid.New()))
-				err = userRepo.InsertUser(u)
+				err = userRepo.CreateUser(u)
 				require.NoError(t, err)
 			})
 
@@ -40,7 +40,7 @@ func TestUserRepository(t *testing.T) {
 				createdUser, err := userRepo.GetUserByUUID(u.UUID())
 				require.NoError(t, err)
 				require.NotNil(t, createdUser)
-				assert.Greater(t, createdUser.ID(), int32(0))
+				assert.Greater(t, createdUser.ID(), 0)
 				assertUserEqual(t, u, createdUser)
 			})
 
@@ -48,7 +48,7 @@ func TestUserRepository(t *testing.T) {
 				createdUser, err := userRepo.GetUserByEmail(u.Email())
 				require.NoError(t, err)
 				require.NotNil(t, createdUser)
-				assert.Greater(t, createdUser.ID(), int32(0))
+				assert.Greater(t, createdUser.ID(), 0)
 				assertUserEqual(t, u, createdUser)
 			})
 		})

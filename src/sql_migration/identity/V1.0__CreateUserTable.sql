@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS identity.users (
-     id serial,
-     uuid UUID NOT NULL,
+     user_id serial NOT NULL,
+     user_uuid UUID NOT NULL,
      first_name varchar(250) NOT NULL,
      last_name varchar(250) NOT NULL,
      email varchar(500) NOT NULL,
@@ -8,5 +8,5 @@ CREATE TABLE IF NOT EXISTS identity.users (
      enabled boolean NOT NULL,
      created_at timestamp NOT NULL,
      last_updated_at timestamp NOT NULL,
-     PRIMARY KEY (id)
+     PRIMARY KEY (user_id)
 );

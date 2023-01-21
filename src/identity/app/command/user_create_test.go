@@ -127,7 +127,7 @@ func TestRegisterUserHandler_RepoInsertUserFails(t *testing.T) {
 	mockRepo.On("GetUserByEmail", fakeEmail).
 		Return(user, nil).
 		Once()
-	mockRepo.On("InsertUser", mock.Anything).
+	mockRepo.On("CreateUser", mock.Anything).
 		Return(errors.New("repo error")).
 		Once()
 
