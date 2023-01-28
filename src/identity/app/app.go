@@ -40,9 +40,9 @@ var verificationTokenCache = storage.NewVerificationTokenCache()
 func NewApplication(publisher messaging.Publisher) Application {
 	logger := logrus.NewEntry(logrus.StandardLogger())
 
-	identityProvider := getIdentityProvider()
+	identityProvider := buildIdentityProvider()
 
-	userRepo := getUserRepo()
+	userRepo := buildUserRepo()
 	verificationTokenRepo := storage.NewVerificationTokenRepository(verificationTokenCache)
 
 	verificationURL, err := url.Parse("http://localhost") // TODO: pull from config
@@ -73,7 +73,7 @@ func DbProvider() (*sql.DB, error) {
 	return sql.Open("postgres", os.Getenv("IDENTITY_POSTGRES"))
 }
 
-func getUserRepo() user.Repository {
+func buildUserRepo() user.Repository {
 	if userSqlRepo, ok := storage.TryCreateUserSqlRepository(); ok {
 		return userSqlRepo
 	}
@@ -81,7 +81,7 @@ func getUserRepo() user.Repository {
 	return storage.NewUserMemoryRepository()
 }
 
-func getIdentityProvider() idp.IdentityProvider {
+func buildIdentityProvider() idp.IdentityProvider {
 	return idp.NewKeyCloakProvider(
 		os.Getenv("IDP_BASE_PATH"),
 		os.Getenv("IDP_ADMIN_USER"),

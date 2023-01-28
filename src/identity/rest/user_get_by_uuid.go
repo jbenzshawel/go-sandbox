@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
+	"github.com/jbenzshawel/go-sandbox/common/auth"
 	crest "github.com/jbenzshawel/go-sandbox/common/rest"
 	"github.com/jbenzshawel/go-sandbox/identity/app/query"
 )
@@ -24,9 +25,18 @@ type getUserResponse struct {
 }
 
 func (h *HttpHandler) GetUserByUUID(ctx *gin.Context) {
+	h.authenticate(ctx, h.getUserByUUID)
+}
+
+func (h *HttpHandler) getUserByUUID(ctx *gin.Context, authUser *auth.User) {
 	userUUID, ok := h.parseUUIDParam(ctx)
 	if !ok {
 		ctx.AbortWithStatus(http.StatusNotFound)
+		return
+	}
+
+	if authUser == nil || authUser.UserUUID != userUUID {
+		ctx.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
 

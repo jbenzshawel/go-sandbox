@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/jbenzshawel/go-sandbox/common/auth"
 	"github.com/jbenzshawel/go-sandbox/common/cerror"
 	crest "github.com/jbenzshawel/go-sandbox/common/rest"
 	"github.com/jbenzshawel/go-sandbox/identity/app/command"
@@ -18,15 +19,23 @@ type sendVerificationRequest struct {
 }
 
 func (h *HttpHandler) SendVerification(ctx *gin.Context) {
+	h.authenticate(ctx, h.sendVerification)
+}
+
+func (h *HttpHandler) sendVerification(ctx *gin.Context, authUser *auth.User) {
 	userUUID, ok := h.parseUUIDParam(ctx)
 	if !ok {
 		ctx.AbortWithStatus(http.StatusNotFound)
 		return
 	}
 
+	if authUser == nil || authUser.UserUUID != userUUID {
+		ctx.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+
 	var r sendVerificationRequest
-	var err error
-	if err = ctx.BindJSON(&r); err != nil {
+	if err := ctx.BindJSON(&r); err != nil {
 		h.app.Logger.Error(err)
 		ctx.JSON(http.StatusBadRequest, cerror.NewValidationError("invalid JSON", nil))
 		return
