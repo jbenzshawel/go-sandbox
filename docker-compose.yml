@@ -14,11 +14,11 @@ services:
       IDP_BASE_PATH: http://keycloak:8080
       IDP_ADMIN_USER: admin
       IDP_ADMIN_PASSWORD: K3YCL04K!p@55w0RD
-      IDP_REALM: master
-      IDP_ISSUER_URL: http://keycloak:8080/realms/master
+      IDP_REALM: sandbox
+      IDP_ISSUER_URL: http://keycloak:8080/realms/sandbox
       IDP_REDIRECT_URL: http://identity:4000/identity-client/callback
       IDP_CLIENT_ID: identity-client
-      IDP_CLIENT_SECRET: iGYvjZan6zyd06gjeOIyTRFjgi7Qf3DL
+      IDP_CLIENT_SECRET: b5WJcFHrgV4KbV6JCBY3ZJY4n0U2FO7E
       NATS_URL: nats://nats-server:4222
     depends_on:
       - flyway

@@ -90,5 +90,5 @@ func (idp *KeyCloakProvider) DeleteUser(ctx context.Context, userID string) erro
 }
 
 func (idp *KeyCloakProvider) getToken(ctx context.Context) (*gocloak.JWT, error) {
-	return idp.client.LoginAdmin(ctx, idp.user, idp.password, idp.realm)
+	return idp.client.LoginAdmin(ctx, idp.user, idp.password, "master")
 }

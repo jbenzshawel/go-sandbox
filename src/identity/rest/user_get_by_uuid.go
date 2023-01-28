@@ -50,7 +50,7 @@ func (h *HttpHandler) getUserByUUID(ctx *gin.Context, authUser *auth.User) {
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, &getUserResponse{
+	ctx.JSON(http.StatusOK, &getUserResponse{
 		ID:            user.ID(),
 		UUID:          user.UUID(),
 		FirstName:     user.FirstName(),
