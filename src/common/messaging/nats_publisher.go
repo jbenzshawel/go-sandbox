@@ -4,10 +4,6 @@ import (
 	"github.com/nats-io/nats.go"
 )
 
-type Publisher interface {
-	Publish(topic string, msg []byte) error
-}
-
 type NatsPublisher struct {
 	nc *nats.Conn
 }

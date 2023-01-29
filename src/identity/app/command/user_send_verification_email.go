@@ -11,6 +11,7 @@ import (
 	"github.com/jbenzshawel/go-sandbox/common/decorator"
 	"github.com/jbenzshawel/go-sandbox/common/messaging"
 	"github.com/jbenzshawel/go-sandbox/identity/domain/token"
+	"github.com/jbenzshawel/go-sandbox/identity/infrastructure"
 )
 
 type SendVerificationEmail struct {
@@ -24,13 +25,13 @@ type SendVerificationEmailHandler decorator.CommandHandler[SendVerificationEmail
 type sendVerificationEmailHandler struct {
 	tokenRepo       token.Repository
 	verificationURL *url.URL
-	publisher       messaging.Publisher
+	publisher       infrastructure.Publisher
 }
 
 func NewSendVerificationEmailHandler(
 	tokenRepo token.Repository,
 	verificationURL *url.URL,
-	publisher messaging.Publisher,
+	publisher infrastructure.Publisher,
 	logger *logrus.Entry,
 ) SendVerificationEmailHandler {
 	if tokenRepo == nil {

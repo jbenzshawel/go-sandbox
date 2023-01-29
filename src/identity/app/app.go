@@ -10,10 +10,10 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 
-	"github.com/jbenzshawel/go-sandbox/common/messaging"
 	"github.com/jbenzshawel/go-sandbox/identity/app/command"
 	"github.com/jbenzshawel/go-sandbox/identity/app/query"
 	"github.com/jbenzshawel/go-sandbox/identity/domain/user"
+	"github.com/jbenzshawel/go-sandbox/identity/infrastructure"
 	"github.com/jbenzshawel/go-sandbox/identity/infrastructure/idp"
 	"github.com/jbenzshawel/go-sandbox/identity/infrastructure/storage"
 )
@@ -37,7 +37,7 @@ type Queries struct {
 
 var verificationTokenCache = storage.NewVerificationTokenCache()
 
-func NewApplication(publisher messaging.Publisher) Application {
+func NewApplication(publisher infrastructure.Publisher) Application {
 	logger := logrus.NewEntry(logrus.StandardLogger())
 
 	identityProvider := buildIdentityProvider()
