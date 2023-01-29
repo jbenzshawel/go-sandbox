@@ -17,12 +17,8 @@ type permissionsTable struct {
 	postgres.Table
 
 	//Columns
-	PermissionID   postgres.ColumnInteger
-	PermissionUUID postgres.ColumnString
-	Name           postgres.ColumnString
-	Description    postgres.ColumnString
-	CreatedAt      postgres.ColumnTimestamp
-	LastUpdatedAt  postgres.ColumnTimestamp
+	PermissionID postgres.ColumnInteger
+	Name         postgres.ColumnString
 
 	AllColumns     postgres.ColumnList
 	MutableColumns postgres.ColumnList
@@ -63,26 +59,18 @@ func newPermissionsTable(schemaName, tableName, alias string) *PermissionsTable 
 
 func newPermissionsTableImpl(schemaName, tableName, alias string) permissionsTable {
 	var (
-		PermissionIDColumn   = postgres.IntegerColumn("permission_id")
-		PermissionUUIDColumn = postgres.StringColumn("permission_uuid")
-		NameColumn           = postgres.StringColumn("name")
-		DescriptionColumn    = postgres.StringColumn("description")
-		CreatedAtColumn      = postgres.TimestampColumn("created_at")
-		LastUpdatedAtColumn  = postgres.TimestampColumn("last_updated_at")
-		allColumns           = postgres.ColumnList{PermissionIDColumn, PermissionUUIDColumn, NameColumn, DescriptionColumn, CreatedAtColumn, LastUpdatedAtColumn}
-		mutableColumns       = postgres.ColumnList{PermissionUUIDColumn, NameColumn, DescriptionColumn, CreatedAtColumn, LastUpdatedAtColumn}
+		PermissionIDColumn = postgres.IntegerColumn("permission_id")
+		NameColumn         = postgres.StringColumn("name")
+		allColumns         = postgres.ColumnList{PermissionIDColumn, NameColumn}
+		mutableColumns     = postgres.ColumnList{NameColumn}
 	)
 
 	return permissionsTable{
 		Table: postgres.NewTable(schemaName, tableName, alias, allColumns...),
 
 		//Columns
-		PermissionID:   PermissionIDColumn,
-		PermissionUUID: PermissionUUIDColumn,
-		Name:           NameColumn,
-		Description:    DescriptionColumn,
-		CreatedAt:      CreatedAtColumn,
-		LastUpdatedAt:  LastUpdatedAtColumn,
+		PermissionID: PermissionIDColumn,
+		Name:         NameColumn,
 
 		AllColumns:     allColumns,
 		MutableColumns: mutableColumns,

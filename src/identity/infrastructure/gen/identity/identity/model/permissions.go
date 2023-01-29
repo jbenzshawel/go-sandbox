@@ -7,17 +7,7 @@
 
 package model
 
-import (
-	"time"
-
-	"github.com/google/uuid"
-)
-
 type Permissions struct {
-	PermissionID   int32 `sql:"primary_key"`
-	PermissionUUID uuid.UUID
-	Name           string
-	Description    *string
-	CreatedAt      time.Time
-	LastUpdatedAt  time.Time
+	PermissionID int32 `sql:"primary_key"`
+	Name         string
 }

@@ -17,12 +17,8 @@ type rolesTable struct {
 	postgres.Table
 
 	//Columns
-	RoleID        postgres.ColumnInteger
-	RoleUUID      postgres.ColumnString
-	Name          postgres.ColumnString
-	Description   postgres.ColumnString
-	CreatedAt     postgres.ColumnTimestamp
-	LastUpdatedAt postgres.ColumnTimestamp
+	RoleID postgres.ColumnInteger
+	Name   postgres.ColumnString
 
 	AllColumns     postgres.ColumnList
 	MutableColumns postgres.ColumnList
@@ -63,26 +59,18 @@ func newRolesTable(schemaName, tableName, alias string) *RolesTable {
 
 func newRolesTableImpl(schemaName, tableName, alias string) rolesTable {
 	var (
-		RoleIDColumn        = postgres.IntegerColumn("role_id")
-		RoleUUIDColumn      = postgres.StringColumn("role_uuid")
-		NameColumn          = postgres.StringColumn("name")
-		DescriptionColumn   = postgres.StringColumn("description")
-		CreatedAtColumn     = postgres.TimestampColumn("created_at")
-		LastUpdatedAtColumn = postgres.TimestampColumn("last_updated_at")
-		allColumns          = postgres.ColumnList{RoleIDColumn, RoleUUIDColumn, NameColumn, DescriptionColumn, CreatedAtColumn, LastUpdatedAtColumn}
-		mutableColumns      = postgres.ColumnList{RoleUUIDColumn, NameColumn, DescriptionColumn, CreatedAtColumn, LastUpdatedAtColumn}
+		RoleIDColumn   = postgres.IntegerColumn("role_id")
+		NameColumn     = postgres.StringColumn("name")
+		allColumns     = postgres.ColumnList{RoleIDColumn, NameColumn}
+		mutableColumns = postgres.ColumnList{NameColumn}
 	)
 
 	return rolesTable{
 		Table: postgres.NewTable(schemaName, tableName, alias, allColumns...),
 
 		//Columns
-		RoleID:        RoleIDColumn,
-		RoleUUID:      RoleUUIDColumn,
-		Name:          NameColumn,
-		Description:   DescriptionColumn,
-		CreatedAt:     CreatedAtColumn,
-		LastUpdatedAt: LastUpdatedAtColumn,
+		RoleID: RoleIDColumn,
+		Name:   NameColumn,
 
 		AllColumns:     allColumns,
 		MutableColumns: mutableColumns,

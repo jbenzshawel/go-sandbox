@@ -197,17 +197,10 @@ func appendPermission(
 	permissions []*user.Permission,
 	p *struct{ model.Permissions },
 ) ([]*user.Permission, error) {
-	var description string
-	if p.Description != nil {
-		description = *p.Description
-	}
+
 	permission, err := user.PermissionFromDatabase(
 		int(p.PermissionID),
-		p.PermissionUUID,
 		p.Name,
-		description,
-		p.CreatedAt,
-		p.LastUpdatedAt,
 	)
 	if err != nil {
 		return nil, err
@@ -223,18 +216,10 @@ func appendRole(roles []*user.Role,
 	},
 	permissions []*user.Permission,
 ) ([]*user.Role, error) {
-	var description string
-	if r.Description != nil {
-		description = *r.Description
-	}
 	role, err := user.RoleFromDatabase(
 		int(r.RoleID),
-		r.RoleUUID,
 		r.Name,
-		description,
 		permissions,
-		r.CreatedAt,
-		r.LastUpdatedAt,
 	)
 	if err != nil {
 		return nil, err

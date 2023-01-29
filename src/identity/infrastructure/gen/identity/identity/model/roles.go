@@ -7,17 +7,7 @@
 
 package model
 
-import (
-	"time"
-
-	"github.com/google/uuid"
-)
-
 type Roles struct {
-	RoleID        int32 `sql:"primary_key"`
-	RoleUUID      uuid.UUID
-	Name          string
-	Description   *string
-	CreatedAt     time.Time
-	LastUpdatedAt time.Time
+	RoleID int32 `sql:"primary_key"`
+	Name   string
 }

@@ -1,20 +1,12 @@
 CREATE TABLE IF NOT EXISTS identity.roles (
-     role_id SERIAL NOT NULL,
-     role_uuid UUID NOT NULL,
+     role_id INT NOT NULL,
      name varchar(250) NOT NULL,
-     description varchar(500) NULL,
-     created_at timestamp NOT NULL,
-     last_updated_at timestamp NOT NULL,
      PRIMARY KEY (role_id)
 );
 
 CREATE TABLE IF NOT EXISTS identity.permissions (
-    permission_id SERIAL NOT NULL,
-    permission_uuid UUID NOT NULL,
+    permission_id INT NOT NULL,
     name varchar(250) NOT NULL,
-    description varchar(500) NULL,
-    created_at timestamp NOT NULL,
-    last_updated_at timestamp NOT NULL,
     PRIMARY KEY (permission_id)
 );
 
