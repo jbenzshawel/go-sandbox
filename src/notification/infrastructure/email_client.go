@@ -40,7 +40,7 @@ func NewEmailClient(cfg EmailConfig) *EmailClient {
 	return &EmailClient{
 		smtpAddr: cfg.Addr,
 		host:     cfg.Host,
-		from:     cfg.Password,
+		from:     cfg.From,
 		username: cfg.Username,
 		password: cfg.Password,
 	}
