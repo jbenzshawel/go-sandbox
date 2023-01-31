@@ -20,7 +20,7 @@ import (
 	"github.com/jbenzshawel/go-sandbox/identity/infrastructure/storage"
 )
 
-func TestRegisterUserHandler(t *testing.T) {
+func TestCreateUserHandler(t *testing.T) {
 	userRepo := getUserRepo()
 	testLogger, _ := test.NewNullLogger()
 	mockIDP := &idp.MockIdentityProvider{}
@@ -43,7 +43,7 @@ func TestRegisterUserHandler(t *testing.T) {
 	err := handler.Handle(context.Background(), cmd)
 	require.NoError(t, err)
 
-	user, err := userRepo.GetUserByEmail(cmd.Email)
+	user, err := userRepo.GetByEmail(cmd.Email)
 	require.NoError(t, err)
 	require.NotNil(t, user)
 	assert.Equal(t, fakeUserID, user.UUID())
@@ -124,10 +124,10 @@ func TestRegisterUserHandler_RepoInsertUserFails(t *testing.T) {
 
 	mockRepo := &user2.MockUserRepository{}
 	var user *user2.User
-	mockRepo.On("GetUserByEmail", fakeEmail).
+	mockRepo.On("GetByEmail", fakeEmail).
 		Return(user, nil).
 		Once()
-	mockRepo.On("CreateUser", mock.Anything).
+	mockRepo.On("Create", mock.Anything).
 		Return(errors.New("repo error")).
 		Once()
 

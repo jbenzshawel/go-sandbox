@@ -5,8 +5,8 @@ import (
 )
 
 type Repository interface {
-	GetUserByEmail(email string) (*User, error)
-	GetUserByUUID(uuid uuid.UUID) (*User, error)
-	CreateUser(user *User) error
-	UpdateUser(user *User) error
+	GetByEmail(email string) (*User, error)
+	GetByUUID(uuid uuid.UUID) (*User, error)
+	Create(user *User) error
+	Update(user *User) error
 }

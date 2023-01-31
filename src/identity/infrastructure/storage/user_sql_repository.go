@@ -11,6 +11,8 @@ import (
 	"github.com/jbenzshawel/go-sandbox/common/cerror"
 	"github.com/jbenzshawel/go-sandbox/common/database"
 	"github.com/jbenzshawel/go-sandbox/identity/domain/user"
+	"github.com/jbenzshawel/go-sandbox/identity/domain/user/permission"
+	"github.com/jbenzshawel/go-sandbox/identity/domain/user/role"
 	"github.com/jbenzshawel/go-sandbox/identity/infrastructure/gen/identity/identity/model"
 	. "github.com/jbenzshawel/go-sandbox/identity/infrastructure/gen/identity/identity/table"
 )
@@ -35,7 +37,7 @@ func TryCreateUserSqlRepository() (*UserSqlRepository, bool) {
 	return nil, false
 }
 
-func (r *UserSqlRepository) CreateUser(u *user.User) (err error) {
+func (r *UserSqlRepository) Create(u *user.User) (err error) {
 	db, err := r.dbProvider()
 	if err != nil {
 		return err
@@ -89,7 +91,7 @@ func (r *UserSqlRepository) CreateUser(u *user.User) (err error) {
 	return
 }
 
-func (r *UserSqlRepository) UpdateUser(u *user.User) error {
+func (r *UserSqlRepository) Update(u *user.User) error {
 	columns := ColumnList{Users.FirstName, Users.LastName, Users.Email,
 		Users.EmailVerified, Users.Enabled, Users.LastUpdatedAt}
 
@@ -107,11 +109,11 @@ func (r *UserSqlRepository) UpdateUser(u *user.User) error {
 	return err
 }
 
-func (r *UserSqlRepository) GetUserByEmail(email string) (*user.User, error) {
+func (r *UserSqlRepository) GetByEmail(email string) (*user.User, error) {
 	return r.queryForUser(Users.Email.EQ(String(email)))
 }
 
-func (r *UserSqlRepository) GetUserByUUID(uuid uuid.UUID) (*user.User, error) {
+func (r *UserSqlRepository) GetByUUID(uuid uuid.UUID) (*user.User, error) {
 	return r.queryForUser(Users.UserUUID.EQ(UUID(uuid)))
 }
 
@@ -119,7 +121,8 @@ func (r *UserSqlRepository) queryForUser(predicate BoolExpression) (*user.User, 
 	stmt := Users.
 		LEFT_JOIN(UserRoles, UserRoles.UserID.EQ(Users.UserID)).
 		LEFT_JOIN(Roles, Roles.RoleID.EQ(UserRoles.RoleID)).
-		LEFT_JOIN(Permissions, Permissions.PermissionID.EQ(Roles.RoleID)).
+		LEFT_JOIN(RolePermissions, RolePermissions.RoleID.EQ(Roles.RoleID)).
+		LEFT_JOIN(Permissions, Permissions.PermissionID.EQ(RolePermissions.PermissionID)).
 		SELECT(Users.AllColumns, Roles.AllColumns, Permissions.AllColumns).
 		WHERE(predicate)
 
@@ -168,14 +171,14 @@ func mapUser(result userQueryResult) (*user.User, error) {
 	)
 }
 
-func mapRoles(dest userQueryResult) ([]*user.Role, error) {
-	var roles []*user.Role
+func mapRoles(dest userQueryResult) ([]*role.Role, error) {
+	var roles []*role.Role
 	var err error
 	for _, r := range dest.Roles {
 		if r == nil {
 			break
 		}
-		var permissions []*user.Permission
+		var permissions []*permission.Permission
 		for _, p := range r.Permissions {
 			if p == nil {
 				break
@@ -194,29 +197,28 @@ func mapRoles(dest userQueryResult) ([]*user.Role, error) {
 }
 
 func appendPermission(
-	permissions []*user.Permission,
+	permissions []*permission.Permission,
 	p *struct{ model.Permissions },
-) ([]*user.Permission, error) {
-
-	permission, err := user.PermissionFromDatabase(
+) ([]*permission.Permission, error) {
+	permit, err := permission.FromDatabase(
 		int(p.PermissionID),
 		p.Name,
 	)
 	if err != nil {
 		return nil, err
 	}
-	permissions = append(permissions, permission)
+	permissions = append(permissions, permit)
 	return permissions, nil
 }
 
-func appendRole(roles []*user.Role,
+func appendRole(roles []*role.Role,
 	r *struct {
 		model.Roles
 		Permissions []*struct{ model.Permissions }
 	},
-	permissions []*user.Permission,
-) ([]*user.Role, error) {
-	role, err := user.RoleFromDatabase(
+	permissions []*permission.Permission,
+) ([]*role.Role, error) {
+	rl, err := role.FromDatabase(
 		int(r.RoleID),
 		r.Name,
 		permissions,
@@ -224,6 +226,6 @@ func appendRole(roles []*user.Role,
 	if err != nil {
 		return nil, err
 	}
-	roles = append(roles, role)
+	roles = append(roles, rl)
 	return roles, nil
 }

@@ -25,7 +25,7 @@ func TestVerifyEmailHandler(t *testing.T) {
 	u, err := user.NewUser("First", "Last", "test@email.com", false, false)
 	require.NoError(t, err)
 	require.NoError(t, u.SetUUID(uuid.New()))
-	require.NoError(t, userRepo.CreateUser(u))
+	require.NoError(t, userRepo.Create(u))
 
 	tkn, err := token.NewToken()
 	require.NoError(t, err)
@@ -45,7 +45,7 @@ func TestVerifyEmailHandler(t *testing.T) {
 		Code:   tkn.Code(),
 	}))
 
-	u, err = userRepo.GetUserByUUID(u.UUID())
+	u, err = userRepo.GetByUUID(u.UUID())
 	require.NoError(t, err)
 	assert.True(t, u.EmailVerified())
 

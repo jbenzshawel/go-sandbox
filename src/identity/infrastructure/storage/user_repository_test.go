@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/jbenzshawel/go-sandbox/identity/domain/user"
+	"github.com/jbenzshawel/go-sandbox/identity/domain/user/role"
 )
 
 func TestUserRepository(t *testing.T) {
@@ -22,7 +23,7 @@ func TestUserRepository(t *testing.T) {
 			var u *user.User
 			var err error
 
-			t.Run("CreateUser", func(t *testing.T) {
+			t.Run("Create", func(t *testing.T) {
 				u, err = user.NewUser(
 					"TestFirstName",
 					"TestLastName",
@@ -32,25 +33,37 @@ func TestUserRepository(t *testing.T) {
 				)
 				require.NoError(t, err)
 				require.NoError(t, u.SetUUID(uuid.New()))
-				err = userRepo.CreateUser(u)
+				u.AddRole(role.Admin)
+				err = userRepo.Create(u)
 				require.NoError(t, err)
 			})
 
-			t.Run("GetUserByUUID", func(t *testing.T) {
-				createdUser, err := userRepo.GetUserByUUID(u.UUID())
+			t.Run("GetByUUID", func(t *testing.T) {
+				createdUser, err := userRepo.GetByUUID(u.UUID())
 				require.NoError(t, err)
 				require.NotNil(t, createdUser)
 				assert.Greater(t, createdUser.ID(), 0)
 				assertUserEqual(t, u, createdUser)
 			})
 
-			t.Run("GetUserByEmail", func(t *testing.T) {
-				createdUser, err := userRepo.GetUserByEmail(u.Email())
+			t.Run("GetByEmail", func(t *testing.T) {
+				createdUser, err := userRepo.GetByEmail(u.Email())
 				require.NoError(t, err)
 				require.NotNil(t, createdUser)
 				assert.Greater(t, createdUser.ID(), 0)
 				assertUserEqual(t, u, createdUser)
 			})
+
+			if r.name == "PostgreSQL" {
+				t.Run("User loads with permissions", func(t *testing.T) {
+					createdUser, err := userRepo.GetByUUID(u.UUID())
+					require.NoError(t, err)
+					require.NotNil(t, createdUser)
+
+					require.Len(t, createdUser.Roles(), 1)
+					require.Len(t, createdUser.Roles()[0].Permissions(), 4)
+				})
+			}
 		})
 	}
 }
@@ -61,6 +74,9 @@ func assertUserEqual(t *testing.T, expectedUser *user.User, actualUser *user.Use
 	assert.Equal(t, expectedUser.LastName(), actualUser.LastName())
 	assert.Equal(t, expectedUser.Email(), actualUser.Email())
 	assert.Equal(t, expectedUser.Enabled(), actualUser.Enabled())
+	require.Len(t, actualUser.Roles(), 1)
+	require.Len(t, expectedUser.Roles(), 1)
+	assert.Equal(t, actualUser.Roles()[0].Type(), expectedUser.Roles()[0].Type())
 	assert.WithinDuration(t, expectedUser.CreatedAt(), actualUser.CreatedAt(), 0)
 	assert.WithinDuration(t, expectedUser.LastUpdatedAt(), actualUser.LastUpdatedAt(), 0)
 }

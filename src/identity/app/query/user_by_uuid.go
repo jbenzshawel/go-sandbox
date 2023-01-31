@@ -22,7 +22,7 @@ type userByUUIDHandler struct {
 }
 
 func (h userByUUIDHandler) Handle(ctx context.Context, userByUUID UserByUUID) (*user.User, error) {
-	u, err := h.userRepo.GetUserByUUID(userByUUID.UUID)
+	u, err := h.userRepo.GetByUUID(userByUUID.UUID)
 	if err != nil {
 		return nil, err
 	}

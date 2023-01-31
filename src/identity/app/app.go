@@ -5,13 +5,13 @@ import (
 	"net/url"
 	"os"
 
-	"github.com/pkg/errors"
-
 	_ "github.com/lib/pq"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
 	"github.com/jbenzshawel/go-sandbox/identity/app/command"
 	"github.com/jbenzshawel/go-sandbox/identity/app/query"
+	"github.com/jbenzshawel/go-sandbox/identity/app/service"
 	"github.com/jbenzshawel/go-sandbox/identity/domain/user"
 	"github.com/jbenzshawel/go-sandbox/identity/infrastructure"
 	"github.com/jbenzshawel/go-sandbox/identity/infrastructure/idp"
@@ -19,20 +19,25 @@ import (
 )
 
 type Application struct {
-	Commands Commands
-	Queries  Queries
+	Commands commands
+	Queries  queries
+	Services services
 	Logger   *logrus.Entry
 }
 
-type Commands struct {
+type commands struct {
 	CreateUser            command.UserCreateHandler
 	SendVerificationEmail command.SendVerificationEmailHandler
 	VerifyEmail           command.VerifyEmailHandler
 }
 
-type Queries struct {
+type queries struct {
 	UserByEmail query.UserByEmailHandler
 	UserByUUID  query.UserByUUIDHandler
+}
+
+type services struct {
+	PermissionService *service.PermissionService
 }
 
 var verificationTokenCache = storage.NewVerificationTokenCache()
@@ -51,7 +56,7 @@ func NewApplication(publisher infrastructure.Publisher) Application {
 	}
 
 	return Application{
-		Commands: Commands{
+		Commands: commands{
 			CreateUser: command.NewCreateUserHandler(userRepo, identityProvider, logger),
 			SendVerificationEmail: command.NewSendVerificationEmailHandler(
 				verificationTokenRepo,
@@ -61,9 +66,12 @@ func NewApplication(publisher infrastructure.Publisher) Application {
 			),
 			VerifyEmail: command.NewVerifyEmailHandler(userRepo, verificationTokenRepo, identityProvider, logger),
 		},
-		Queries: Queries{
+		Queries: queries{
 			UserByEmail: query.NewUserByEmailHandler(userRepo, logger),
 			UserByUUID:  query.NewUserByUUIDHandler(userRepo, logger),
+		},
+		Services: services{
+			PermissionService: service.NewPermissionService(userRepo),
 		},
 		Logger: logger,
 	}

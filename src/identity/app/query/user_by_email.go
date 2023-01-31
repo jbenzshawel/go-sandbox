@@ -20,7 +20,7 @@ type userByEmailHandler struct {
 }
 
 func (h userByEmailHandler) Handle(ctx context.Context, userByEmail UserByEmail) (*user.User, error) {
-	u, err := h.userRepo.GetUserByEmail(userByEmail.Email)
+	u, err := h.userRepo.GetByEmail(userByEmail.Email)
 	if err != nil {
 		return nil, err
 	}

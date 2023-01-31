@@ -1,4 +1,4 @@
-package user
+package permission
 
 import (
 	"github.com/jbenzshawel/go-sandbox/common/cerror"
@@ -24,7 +24,7 @@ func NewPermission(name string) (*Permission, error) {
 	}, nil
 }
 
-func PermissionFromDatabase(permissionID int, name string) (*Permission, error) {
+func FromDatabase(permissionID int, name string) (*Permission, error) {
 	p, err := NewPermission(name)
 	if err != nil {
 		return nil, err
@@ -41,4 +41,8 @@ func (p *Permission) ID() int {
 
 func (p *Permission) Name() string {
 	return p.name
+}
+
+func (p *Permission) Type() Type {
+	return Type(p.id)
 }

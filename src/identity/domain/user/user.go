@@ -7,6 +7,8 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/jbenzshawel/go-sandbox/common/cerror"
+	"github.com/jbenzshawel/go-sandbox/identity/domain/user/permission"
+	"github.com/jbenzshawel/go-sandbox/identity/domain/user/role"
 )
 
 type User struct {
@@ -19,7 +21,8 @@ type User struct {
 	emailVerified bool
 	enabled       bool
 
-	roles []*Role
+	roles       []*role.Role
+	permissions map[permission.Type]struct{}
 
 	createdAt     time.Time
 	lastUpdatedAt time.Time
@@ -53,16 +56,19 @@ func NewUser(firstName, lastName, email string, emailVerified, enabled bool) (*U
 }
 
 func FromDatabase(id int, userUUID uuid.UUID, firstName, lastName, email string,
-	emailVerified, enabled bool, roles []*Role, createdAt, lastUpdatedAt time.Time) (*User, error) {
+	emailVerified, enabled bool, roles []*role.Role, createdAt, lastUpdatedAt time.Time) (*User, error) {
 	u, err := NewUser(firstName, lastName, email, emailVerified, enabled)
 	if err != nil {
 		return nil, err
 	}
+
 	u.id = id
 	u.uuid = userUUID
 	u.roles = roles
+	u.setPermissions(roles)
 	u.createdAt = createdAt
 	u.lastUpdatedAt = lastUpdatedAt
+
 	return u, nil
 }
 
@@ -94,7 +100,7 @@ func (u *User) Enabled() bool {
 	return u.enabled
 }
 
-func (u *User) Roles() []*Role {
+func (u *User) Roles() []*role.Role {
 	return u.roles
 }
 
@@ -127,4 +133,31 @@ func (u *User) SetUUID(userUUID uuid.UUID) error {
 func (u *User) SetEmailVerified(verified bool) {
 	u.emailVerified = verified
 	u.lastUpdatedAt = time.Now().UTC()
+}
+
+func (u *User) AddRole(roleType role.Type) {
+	u.roles = append(u.roles, role.FromType(roleType))
+	u.lastUpdatedAt = time.Now().UTC()
+}
+
+func (u *User) setRoles(roles []*role.Role) {
+	u.roles = roles
+	u.setPermissions(roles)
+}
+
+func (u *User) setPermissions(roles []*role.Role) {
+	if u.permissions == nil {
+		u.permissions = map[permission.Type]struct{}{}
+	}
+
+	for _, r := range roles {
+		for _, p := range r.Permissions() {
+			u.permissions[p.Type()] = struct{}{}
+		}
+	}
+}
+
+func (u *User) HasPermission(permitType permission.Type) bool {
+	_, ok := u.permissions[permitType]
+	return ok
 }

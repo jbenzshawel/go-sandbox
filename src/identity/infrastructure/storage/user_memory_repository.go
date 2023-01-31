@@ -22,7 +22,7 @@ func NewUserMemoryRepository() *UserMemoryRepository {
 	}
 }
 
-func (r *UserMemoryRepository) CreateUser(user *user.User) error {
+func (r *UserMemoryRepository) Create(user *user.User) error {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
@@ -36,7 +36,7 @@ func (r *UserMemoryRepository) CreateUser(user *user.User) error {
 	return nil
 }
 
-func (r *UserMemoryRepository) UpdateUser(user *user.User) error {
+func (r *UserMemoryRepository) Update(user *user.User) error {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
@@ -45,7 +45,7 @@ func (r *UserMemoryRepository) UpdateUser(user *user.User) error {
 	return nil
 }
 
-func (r *UserMemoryRepository) GetUserByEmail(email string) (*user.User, error) {
+func (r *UserMemoryRepository) GetByEmail(email string) (*user.User, error) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 
@@ -57,7 +57,7 @@ func (r *UserMemoryRepository) GetUserByEmail(email string) (*user.User, error) 
 	return nil, nil
 }
 
-func (r *UserMemoryRepository) GetUserByUUID(uuid uuid.UUID) (*user.User, error) {
+func (r *UserMemoryRepository) GetByUUID(uuid uuid.UUID) (*user.User, error) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 

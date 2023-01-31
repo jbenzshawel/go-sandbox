@@ -62,7 +62,7 @@ func (h userCreateHandler) Handle(ctx context.Context, cmd UserCreate) error {
 		validationErrors["confirmPassword"] = "password and confirm password must match"
 	}
 
-	existingUser, err := h.userRepo.GetUserByEmail(cmd.Email)
+	existingUser, err := h.userRepo.GetByEmail(cmd.Email)
 	if err != nil {
 		return err
 	}
@@ -99,7 +99,7 @@ func (h userCreateHandler) createUser(ctx context.Context, cmd UserCreate, u *us
 		return h.handleCreateUserErr(ctx, userUUID, err)
 	}
 
-	err = h.userRepo.CreateUser(u)
+	err = h.userRepo.Create(u)
 	if err != nil {
 		return h.handleCreateUserErr(ctx, userUUID, err)
 	}
