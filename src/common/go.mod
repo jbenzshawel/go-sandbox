@@ -5,7 +5,6 @@ go 1.18
 require (
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/gin-gonic/gin v1.8.1
-	github.com/go-jet/jet/v2 v2.9.0
 	github.com/google/uuid v1.1.1
 	github.com/lib/pq v1.10.5
 	github.com/nats-io/nats.go v1.22.1

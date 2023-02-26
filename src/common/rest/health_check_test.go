@@ -16,15 +16,13 @@ import (
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/jbenzshawel/go-sandbox/common/database"
 )
 
 type dbHealthCheckTestCase struct {
-	name       string
-	dbProvider database.DbProvider
-	success    bool
-	err        error
+	name    string
+	db      *sql.DB
+	success bool
+	err     error
 }
 
 func TestGetDatabaseHealthCheck(t *testing.T) {
@@ -33,30 +31,26 @@ func TestGetDatabaseHealthCheck(t *testing.T) {
 	dbPingErrMsg := "dial tcp [::1]:5432: connect: connection refused"
 	if connectionString, ok := os.LookupEnv("IDENTITY_POSTGRES"); ok {
 		dbPingErrMsg = "pq: SSL is not enabled on the server"
+		db, _ := sql.Open("postgres", connectionString)
 		testCases = append(testCases, dbHealthCheckTestCase{
-			name: "db health check success",
-			dbProvider: func() (*sql.DB, error) {
-				return sql.Open("postgres", connectionString)
-			},
+			name:    "db health check success",
+			db:      db,
 			success: true,
 			err:     nil,
 		})
 	}
 
+	invalidDB, _ := sql.Open("postgres", "")
 	testCases = append(testCases, []dbHealthCheckTestCase{
 		{
-			name: "db provider error",
-			dbProvider: func() (*sql.DB, error) {
-				return nil, errors.New("db provider error")
-			},
+			name:    "db provider error",
+			db:      nil,
 			success: false,
-			err:     errors.New("db provider error"),
+			err:     errors.New("nil db connection"),
 		},
 		{
-			name: "db ping error",
-			dbProvider: func() (*sql.DB, error) {
-				return sql.Open("postgres", "")
-			},
+			name:    "db ping error",
+			db:      invalidDB,
 			success: false,
 			err:     errors.New(dbPingErrMsg),
 		},
@@ -65,7 +59,7 @@ func TestGetDatabaseHealthCheck(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			check := GetDatabaseHealthCheck(tc.dbProvider)
+			check := GetDatabaseHealthCheck(tc.db)
 			require.NotNil(t, check)
 
 			success, name, err := check()

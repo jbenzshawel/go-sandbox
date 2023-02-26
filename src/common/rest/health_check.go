@@ -1,15 +1,14 @@
 package rest
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/nats-io/nats.go"
 	"github.com/sirupsen/logrus"
-
-	"github.com/jbenzshawel/go-sandbox/common/cerror"
-	"github.com/jbenzshawel/go-sandbox/common/database"
 )
 
 type healthCheckResponse struct {
@@ -19,17 +18,13 @@ type healthCheckResponse struct {
 
 type HealthCheckTask func() (bool, string, error)
 
-func GetDatabaseHealthCheck(dbProvider database.DbProvider) HealthCheckTask {
+func GetDatabaseHealthCheck(db *sql.DB) HealthCheckTask {
 	return func() (success bool, name string, err error) {
 		healthCheckName := "database"
-		db, err := dbProvider()
-		if err != nil {
-			return false, healthCheckName, err
+
+		if db == nil {
+			return false, healthCheckName, errors.New("nil db connection")
 		}
-		defer func() {
-			closeErr := db.Close()
-			err = cerror.CombineErrors(err, closeErr)
-		}()
 
 		err = db.Ping()
 		if err != nil {

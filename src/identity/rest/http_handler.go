@@ -24,7 +24,7 @@ func NewHttpHandler(application app.Application, nc *nats.Conn, authProvider *au
 		authProvider: authProvider,
 		healthCheck: rest.NewHealthCheckHandler(
 			application.Logger,
-			rest.GetDatabaseHealthCheck(app.DbProvider),
+			rest.GetDatabaseHealthCheck(application.DB()),
 			rest.GetNatsHealthCheck(nc),
 		),
 	}

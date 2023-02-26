@@ -9,7 +9,6 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/jbenzshawel/go-sandbox/common/cerror"
-	"github.com/jbenzshawel/go-sandbox/common/database"
 	"github.com/jbenzshawel/go-sandbox/identity/domain/user"
 	"github.com/jbenzshawel/go-sandbox/identity/domain/user/permission"
 	"github.com/jbenzshawel/go-sandbox/identity/domain/user/role"
@@ -18,35 +17,29 @@ import (
 )
 
 type UserSqlRepository struct {
-	dbProvider database.DbProvider
+	db *sql.DB
 }
 
-func NewUserSqlRepository(dbProvider database.DbProvider) *UserSqlRepository {
+func NewUserSqlRepository(db *sql.DB) *UserSqlRepository {
 	return &UserSqlRepository{
-		dbProvider: dbProvider,
+		db: db,
 	}
 }
 
 func TryCreateUserSqlRepository() (*UserSqlRepository, bool) {
 	if connectionString, ok := os.LookupEnv("IDENTITY_POSTGRES"); ok {
-		return NewUserSqlRepository(func() (*sql.DB, error) {
-			return sql.Open("postgres", connectionString)
-		}), true
+		db, err := sql.Open("postgres", connectionString)
+		if err != nil {
+			return nil, false
+		}
+		return NewUserSqlRepository(db), true
 	}
 
 	return nil, false
 }
 
 func (r *UserSqlRepository) Create(u *user.User) (err error) {
-	db, err := r.dbProvider()
-	if err != nil {
-		return err
-	}
-	defer func() {
-		closeErr := db.Close()
-		err = cerror.CombineErrors(err, closeErr)
-	}()
-	txn, err := db.Begin()
+	txn, err := r.db.Begin()
 	if err != nil {
 		return err
 	}
@@ -95,7 +88,7 @@ func (r *UserSqlRepository) Update(u *user.User) error {
 	columns := ColumnList{Users.FirstName, Users.LastName, Users.Email,
 		Users.EmailVerified, Users.Enabled, Users.LastUpdatedAt}
 
-	_, err := database.Execute(r.dbProvider, Users.UPDATE(columns).
+	stmt := Users.UPDATE(columns).
 		MODEL(model.Users{
 			FirstName:     u.FirstName(),
 			LastName:      u.LastName(),
@@ -104,8 +97,9 @@ func (r *UserSqlRepository) Update(u *user.User) error {
 			Enabled:       u.Enabled(),
 			LastUpdatedAt: u.LastUpdatedAt(),
 		}).
-		WHERE(Users.UserUUID.EQ(UUID(u.UUID()))))
+		WHERE(Users.UserUUID.EQ(UUID(u.UUID())))
 
+	_, err := stmt.Exec(r.db)
 	return err
 }
 
@@ -127,7 +121,8 @@ func (r *UserSqlRepository) queryForUser(predicate BoolExpression) (*user.User, 
 		WHERE(predicate)
 
 	var dest []userQueryResult
-	err := database.Query(r.dbProvider, stmt, &dest)
+
+	err := stmt.Query(r.db, &dest)
 	if err != nil {
 		return nil, err
 	}

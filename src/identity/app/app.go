@@ -23,6 +23,8 @@ type Application struct {
 	Queries  queries
 	Services services
 	Logger   *logrus.Entry
+
+	db *sql.DB
 }
 
 type commands struct {
@@ -46,8 +48,9 @@ func NewApplication(publisher infrastructure.Publisher) Application {
 	logger := logrus.NewEntry(logrus.StandardLogger())
 
 	identityProvider := buildIdentityProvider()
+	db := openDB()
 
-	userRepo := buildUserRepo()
+	userRepo := buildUserRepo(db)
 	verificationTokenRepo := storage.NewVerificationTokenRepository(verificationTokenCache)
 
 	verificationURL, err := url.Parse("http://localhost") // TODO: pull from config
@@ -74,19 +77,31 @@ func NewApplication(publisher infrastructure.Publisher) Application {
 			PermissionService: service.NewPermissionService(userRepo),
 		},
 		Logger: logger,
+		db:     db,
 	}
 }
 
-func DbProvider() (*sql.DB, error) {
-	return sql.Open("postgres", os.Getenv("IDENTITY_POSTGRES"))
+func (a Application) DB() *sql.DB {
+	return a.db
 }
 
-func buildUserRepo() user.Repository {
-	if userSqlRepo, ok := storage.TryCreateUserSqlRepository(); ok {
-		return userSqlRepo
+func openDB() *sql.DB {
+	if connectionString, ok := os.LookupEnv("IDENTITY_POSTGRES"); ok {
+		db, err := sql.Open("postgres", connectionString)
+		if err != nil {
+			panic(errors.Wrap(err, "failed to initialize postgres db"))
+		}
+		return db
+	}
+	return nil
+}
+
+func buildUserRepo(db *sql.DB) user.Repository {
+	if db == nil {
+		return storage.NewUserMemoryRepository()
 	}
 
-	return storage.NewUserMemoryRepository()
+	return storage.NewUserSqlRepository(db)
 }
 
 func buildIdentityProvider() idp.IdentityProvider {
