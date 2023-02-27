@@ -1,13 +1,9 @@
 #!/bin/bash
 
-while true
+while [[ $(curl -sL -w "%{http_code}\\n" "keycloak:8080" -o /dev/null) != "200" ]]
  do
-    if [[ $(curl -sL -w "%{http_code}\\n" "keycloak:8080" -o /dev/null) == "200" ]]; then
-        break
-    else
-        echo "Waiting for keycloak availability..."
-        sleep 0.5
-    fi
+    echo "Waiting for keycloak availability..."
+    sleep 0.5
 done
 
 go run .
