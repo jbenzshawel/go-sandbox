@@ -18,7 +18,7 @@ type healthCheckResponse struct {
 
 type HealthCheckTask func() (bool, string, error)
 
-func GetDatabaseHealthCheck(db *sql.DB) HealthCheckTask {
+func DatabaseHealthCheck(db *sql.DB) HealthCheckTask {
 	return func() (success bool, name string, err error) {
 		healthCheckName := "database"
 
@@ -35,7 +35,7 @@ func GetDatabaseHealthCheck(db *sql.DB) HealthCheckTask {
 	}
 }
 
-func GetNatsHealthCheck(nc *nats.Conn) HealthCheckTask {
+func NatsHealthCheck(nc *nats.Conn) HealthCheckTask {
 	return func() (bool, string, error) {
 		healthCheckName := "nats"
 		if nc.IsConnected() {
@@ -50,8 +50,12 @@ type HealthCheckHandler struct {
 	logger *logrus.Entry
 }
 
-func NewHealthCheckHandler(logger *logrus.Entry, checks ...HealthCheckTask) *HealthCheckHandler {
-	return &HealthCheckHandler{logger: logger, checks: checks}
+func NewHealthCheckHandler(logger *logrus.Entry) *HealthCheckHandler {
+	return &HealthCheckHandler{logger: logger, checks: []HealthCheckTask{}}
+}
+
+func (h *HealthCheckHandler) AddCheck(check HealthCheckTask) {
+	h.checks = append(h.checks, check)
 }
 
 func (h *HealthCheckHandler) Handler(ctx *gin.Context) {

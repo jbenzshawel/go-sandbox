@@ -5,8 +5,8 @@ import (
 	"github.com/nats-io/nats.go"
 
 	"github.com/jbenzshawel/go-sandbox/common/messaging"
+	"github.com/jbenzshawel/go-sandbox/common/rest"
 	"github.com/jbenzshawel/go-sandbox/notification/app"
-	"github.com/jbenzshawel/go-sandbox/notification/rest"
 	"github.com/jbenzshawel/go-sandbox/notification/subscriber"
 )
 
@@ -17,6 +17,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	application.HealthCheck.AddCheck(rest.NatsHealthCheck(nc))
 
 	subscriptionHandler := subscriber.NewSubscriptionHandler(application)
 	err = messaging.NewNatsSubscriber(nc).
@@ -27,9 +28,8 @@ func main() {
 		panic(err)
 	}
 
-	httpHandler := rest.NewHttpHandler(application, nc)
 	router := gin.Default() // TODO: Update gin config for production
-	router.GET("/health", httpHandler.HealthCheck)
+	router.GET("/health", application.HealthCheck.Handler)
 
 	err = router.Run(":" + application.Config.HTTPPort)
 	if err != nil {

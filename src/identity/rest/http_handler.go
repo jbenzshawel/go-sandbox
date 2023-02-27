@@ -5,33 +5,20 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/nats-io/nats.go"
-
 	"github.com/jbenzshawel/go-sandbox/common/auth"
-	"github.com/jbenzshawel/go-sandbox/common/rest"
 	"github.com/jbenzshawel/go-sandbox/identity/app"
 )
 
 type HttpHandler struct {
 	app          app.Application
 	authProvider *auth.OIDCProvider
-	healthCheck  *rest.HealthCheckHandler
 }
 
-func NewHttpHandler(application app.Application, nc *nats.Conn, authProvider *auth.OIDCProvider) *HttpHandler {
+func NewHttpHandler(application app.Application, authProvider *auth.OIDCProvider) *HttpHandler {
 	return &HttpHandler{
 		app:          application,
 		authProvider: authProvider,
-		healthCheck: rest.NewHealthCheckHandler(
-			application.Logger,
-			rest.GetDatabaseHealthCheck(application.DB()),
-			rest.GetNatsHealthCheck(nc),
-		),
 	}
-}
-
-func (h *HttpHandler) HealthCheck(ctx *gin.Context) {
-	h.healthCheck.Handler(ctx)
 }
 
 func (h *HttpHandler) OAuthCallback(ctx *gin.Context) {

@@ -2,29 +2,31 @@ package app
 
 import (
 	"database/sql"
+
 	"net/url"
 	"os"
 
 	_ "github.com/lib/pq"
+	"github.com/nats-io/nats.go"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
+	"github.com/jbenzshawel/go-sandbox/common/messaging"
+	"github.com/jbenzshawel/go-sandbox/common/rest"
 	"github.com/jbenzshawel/go-sandbox/identity/app/command"
 	"github.com/jbenzshawel/go-sandbox/identity/app/query"
 	"github.com/jbenzshawel/go-sandbox/identity/app/service"
 	"github.com/jbenzshawel/go-sandbox/identity/domain/user"
-	"github.com/jbenzshawel/go-sandbox/identity/infrastructure"
 	"github.com/jbenzshawel/go-sandbox/identity/infrastructure/idp"
 	"github.com/jbenzshawel/go-sandbox/identity/infrastructure/storage"
 )
 
 type Application struct {
-	Commands commands
-	Queries  queries
-	Services services
-	Logger   *logrus.Entry
-
-	db *sql.DB
+	Commands    commands
+	Queries     queries
+	Services    services
+	HealthCheck *rest.HealthCheckHandler
+	Logger      *logrus.Entry
 }
 
 type commands struct {
@@ -44,12 +46,23 @@ type services struct {
 
 var verificationTokenCache = storage.NewVerificationTokenCache()
 
-func NewApplication(publisher infrastructure.Publisher) Application {
+func NewApplication() Application {
 	logger := logrus.NewEntry(logrus.StandardLogger())
+	healthCheck := rest.NewHealthCheckHandler(logger)
+
+	nc, err := natsConnection()
+	if err != nil {
+		panic(errors.Wrap(err, "failed to connect to nats"))
+	}
+	healthCheck.AddCheck(rest.NatsHealthCheck(nc))
+
+	db, err := openDB()
+	if err != nil {
+		panic(errors.Wrap(err, "failed to connect to db"))
+	}
+	healthCheck.AddCheck(rest.DatabaseHealthCheck(db))
 
 	identityProvider := buildIdentityProvider()
-	db := openDB()
-
 	userRepo := buildUserRepo(db)
 	verificationTokenRepo := storage.NewVerificationTokenRepository(verificationTokenCache)
 
@@ -64,7 +77,7 @@ func NewApplication(publisher infrastructure.Publisher) Application {
 			SendVerificationEmail: command.NewSendVerificationEmailHandler(
 				verificationTokenRepo,
 				verificationURL,
-				publisher,
+				messaging.NewNatsPublisher(nc),
 				logger,
 			),
 			VerifyEmail: command.NewVerifyEmailHandler(userRepo, verificationTokenRepo, identityProvider, logger),
@@ -76,24 +89,24 @@ func NewApplication(publisher infrastructure.Publisher) Application {
 		Services: services{
 			PermissionService: service.NewPermissionService(userRepo),
 		},
-		Logger: logger,
-		db:     db,
+		HealthCheck: healthCheck,
+		Logger:      logger,
 	}
 }
 
-func (a Application) DB() *sql.DB {
-	return a.db
-}
-
-func openDB() *sql.DB {
+func openDB() (*sql.DB, error) {
 	if connectionString, ok := os.LookupEnv("IDENTITY_POSTGRES"); ok {
 		db, err := sql.Open("postgres", connectionString)
 		if err != nil {
-			panic(errors.Wrap(err, "failed to initialize postgres db"))
+			return nil, err
 		}
-		return db
+		return db, nil
 	}
-	return nil
+	return nil, errors.New("IDENTITY_POSTGRES env not found")
+}
+
+func natsConnection() (*nats.Conn, error) {
+	return nats.Connect(os.Getenv("NATS_URL"))
 }
 
 func buildUserRepo(db *sql.DB) user.Repository {

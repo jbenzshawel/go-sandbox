@@ -5,31 +5,24 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
-	"github.com/nats-io/nats.go"
-
 	"github.com/jbenzshawel/go-sandbox/common/auth"
-	"github.com/jbenzshawel/go-sandbox/common/messaging"
 	"github.com/jbenzshawel/go-sandbox/identity/app"
 	"github.com/jbenzshawel/go-sandbox/identity/rest"
 )
 
 func main() {
-	nc, err := natsConnection()
-	if err != nil {
-		panic(err)
-	}
 	authProvider, err := buildAuthProvider()
 	if err != nil {
 		panic(err)
 	}
 
-	application := app.NewApplication(messaging.NewNatsPublisher(nc))
-	httpHandler := rest.NewHttpHandler(application, nc, authProvider)
+	application := app.NewApplication()
+	httpHandler := rest.NewHttpHandler(application, authProvider)
 
 	router := gin.Default() // TODO: Update gin config for production
 	router.POST("/identity-client/callback", httpHandler.OAuthCallback)
 
-	router.GET("/health", httpHandler.HealthCheck)
+	router.GET("/health", application.HealthCheck.Handler)
 
 	router.POST("/user", httpHandler.CreateUser)
 	router.POST("/user/:uuid/send-verification", httpHandler.SendVerification)
@@ -40,10 +33,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-}
-
-func natsConnection() (*nats.Conn, error) {
-	return nats.Connect(os.Getenv("NATS_URL"))
 }
 
 func buildAuthProvider() (*auth.OIDCProvider, error) {

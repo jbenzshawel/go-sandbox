@@ -6,6 +6,7 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 
+	"github.com/jbenzshawel/go-sandbox/common/rest"
 	"github.com/jbenzshawel/go-sandbox/notification/app/command"
 	"github.com/jbenzshawel/go-sandbox/notification/infrastructure"
 )
@@ -17,9 +18,10 @@ type appConfig struct {
 }
 
 type Application struct {
-	Commands Commands
-	Logger   *logrus.Entry
-	Config   appConfig
+	Commands    Commands
+	Logger      *logrus.Entry
+	Config      appConfig
+	HealthCheck *rest.HealthCheckHandler
 }
 
 type Commands struct {
@@ -28,15 +30,19 @@ type Commands struct {
 
 func NewApplication() Application {
 	logger := logrus.NewEntry(logrus.StandardLogger())
+	healthCheck := rest.NewHealthCheckHandler(logger)
+
 	config := buildConfig()
 	emailClient := infrastructure.NewEmailClient(config.Email)
+	healthCheck.AddCheck(emailClient.HealthCheck())
 
 	return Application{
 		Commands: Commands{
 			SendVerificationEmail: command.NewSendVerificationEmailHandler(emailClient, logger),
 		},
-		Logger: logger,
-		Config: config,
+		Logger:      logger,
+		Config:      config,
+		HealthCheck: healthCheck,
 	}
 }
 

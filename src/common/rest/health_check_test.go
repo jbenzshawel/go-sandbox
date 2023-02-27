@@ -59,7 +59,7 @@ func TestGetDatabaseHealthCheck(t *testing.T) {
 	for _, tc := range testCases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			check := GetDatabaseHealthCheck(tc.db)
+			check := DatabaseHealthCheck(tc.db)
 			require.NotNil(t, check)
 
 			success, name, err := check()
@@ -116,7 +116,10 @@ func TestHealthCheckHandler(t *testing.T) {
 			w := httptest.NewRecorder()
 			ctx, _ := gin.CreateTestContext(w)
 
-			healthCheck := NewHealthCheckHandler(logrus.NewEntry(testLogger), tc.checks...)
+			healthCheck := NewHealthCheckHandler(logrus.NewEntry(testLogger))
+			for _, check := range tc.checks {
+				healthCheck.AddCheck(check)
+			}
 			healthCheck.Handler(ctx)
 
 			resp := w.Result()
