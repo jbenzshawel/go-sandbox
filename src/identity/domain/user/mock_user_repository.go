@@ -19,6 +19,11 @@ func (r *MockUserRepository) Update(user *User) error {
 	return args.Error(0)
 }
 
+func (r *MockUserRepository) GetAll(page, pageSize int) ([]*User, error) {
+	args := r.Called(page, pageSize)
+	return args.Get(0).([]*User), args.Error(1)
+}
+
 func (r *MockUserRepository) GetByEmail(email string) (*User, error) {
 	args := r.Called(email)
 	return args.Get(0).(*User), args.Error(1)

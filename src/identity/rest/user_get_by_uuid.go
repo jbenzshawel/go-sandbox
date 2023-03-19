@@ -10,9 +10,10 @@ import (
 	"github.com/jbenzshawel/go-sandbox/common/auth"
 	crest "github.com/jbenzshawel/go-sandbox/common/rest"
 	"github.com/jbenzshawel/go-sandbox/identity/app/query"
+	"github.com/jbenzshawel/go-sandbox/identity/domain/user"
 )
 
-type getUserResponse struct {
+type userResponse struct {
 	ID            int       `json:"id"`
 	UUID          uuid.UUID `json:"uuid"`
 	FirstName     string    `json:"firstName"`
@@ -50,7 +51,11 @@ func (h *HttpHandler) getUserByUUID(ctx *gin.Context, authUser *auth.User) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, &getUserResponse{
+	ctx.JSON(http.StatusOK, mapUserResponse(user))
+}
+
+func mapUserResponse(user *user.User) *userResponse {
+	return &userResponse{
 		ID:            user.ID(),
 		UUID:          user.UUID(),
 		FirstName:     user.FirstName(),
@@ -60,5 +65,5 @@ func (h *HttpHandler) getUserByUUID(ctx *gin.Context, authUser *auth.User) {
 		Enabled:       user.Enabled(),
 		CreatedAt:     user.CreatedAt(),
 		LastUpdatedAt: user.LastUpdatedAt(),
-	})
+	}
 }

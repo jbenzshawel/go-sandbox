@@ -36,6 +36,7 @@ type commands struct {
 }
 
 type queries struct {
+	Users       query.UsersHandler
 	UserByEmail query.UserByEmailHandler
 	UserByUUID  query.UserByUUIDHandler
 }
@@ -83,6 +84,7 @@ func NewApplication() Application {
 			VerifyEmail: command.NewVerifyEmailHandler(userRepo, verificationTokenRepo, identityProvider, logger),
 		},
 		Queries: queries{
+			Users:       query.NewUsersHandler(userRepo, logger),
 			UserByEmail: query.NewUserByEmailHandler(userRepo, logger),
 			UserByUUID:  query.NewUserByUUIDHandler(userRepo, logger),
 		},

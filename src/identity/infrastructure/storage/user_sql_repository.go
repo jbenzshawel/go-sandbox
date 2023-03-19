@@ -103,6 +103,43 @@ func (r *UserSqlRepository) Update(u *user.User) error {
 	return err
 }
 
+func (r *UserSqlRepository) GetAll(page, pageSize int) ([]*user.User, error) {
+	queryUsers :=
+		SELECT(Users.AllColumns).
+			FROM(Users).
+			OFFSET(int64(page * pageSize)).
+			LIMIT(int64(pageSize)).
+			AsTable("Users")
+
+	joinUserID := Users.UserID.From(queryUsers)
+	stmt := SELECT(queryUsers.AllColumns(), Roles.AllColumns, Permissions.AllColumns).
+		FROM(queryUsers.
+			LEFT_JOIN(UserRoles, UserRoles.UserID.EQ(joinUserID)).
+			LEFT_JOIN(Roles, Roles.RoleID.EQ(UserRoles.RoleID)).
+			LEFT_JOIN(RolePermissions, RolePermissions.RoleID.EQ(Roles.RoleID)).
+			LEFT_JOIN(Permissions, Permissions.PermissionID.EQ(RolePermissions.PermissionID)))
+
+	println(stmt.DebugSql())
+
+	var dest []*userQueryResult
+
+	err := stmt.Query(r.db, &dest)
+	if err != nil {
+		return nil, err
+	}
+
+	results := make([]*user.User, 0, len(dest))
+	for _, item := range dest {
+		u, mapErr := mapUser(item)
+		if mapErr != nil {
+			return nil, mapErr
+		}
+		results = append(results, u)
+	}
+
+	return results, nil
+}
+
 func (r *UserSqlRepository) GetByEmail(email string) (*user.User, error) {
 	return r.queryForUser(Users.Email.EQ(String(email)))
 }
@@ -112,15 +149,10 @@ func (r *UserSqlRepository) GetByUUID(uuid uuid.UUID) (*user.User, error) {
 }
 
 func (r *UserSqlRepository) queryForUser(predicate BoolExpression) (*user.User, error) {
-	stmt := Users.
-		LEFT_JOIN(UserRoles, UserRoles.UserID.EQ(Users.UserID)).
-		LEFT_JOIN(Roles, Roles.RoleID.EQ(UserRoles.RoleID)).
-		LEFT_JOIN(RolePermissions, RolePermissions.RoleID.EQ(Roles.RoleID)).
-		LEFT_JOIN(Permissions, Permissions.PermissionID.EQ(RolePermissions.PermissionID)).
-		SELECT(Users.AllColumns, Roles.AllColumns, Permissions.AllColumns).
+	stmt := r.selectUsers().
 		WHERE(predicate)
 
-	var dest []userQueryResult
+	var dest []*userQueryResult
 
 	err := stmt.Query(r.db, &dest)
 	if err != nil {
@@ -132,6 +164,15 @@ func (r *UserSqlRepository) queryForUser(predicate BoolExpression) (*user.User, 
 	}
 
 	return nil, nil
+}
+
+func (r *UserSqlRepository) selectUsers() SelectStatement {
+	return Users.
+		LEFT_JOIN(UserRoles, UserRoles.UserID.EQ(Users.UserID)).
+		LEFT_JOIN(Roles, Roles.RoleID.EQ(UserRoles.RoleID)).
+		LEFT_JOIN(RolePermissions, RolePermissions.RoleID.EQ(Roles.RoleID)).
+		LEFT_JOIN(Permissions, Permissions.PermissionID.EQ(RolePermissions.PermissionID)).
+		SELECT(Users.AllColumns, Roles.AllColumns, Permissions.AllColumns)
 }
 
 type userQueryResult struct {
@@ -146,7 +187,7 @@ type userQueryResult struct {
 	}
 }
 
-func mapUser(result userQueryResult) (*user.User, error) {
+func mapUser(result *userQueryResult) (*user.User, error) {
 	roles, err := mapRoles(result)
 	if err != nil {
 		return nil, err
@@ -166,17 +207,17 @@ func mapUser(result userQueryResult) (*user.User, error) {
 	)
 }
 
-func mapRoles(dest userQueryResult) ([]*role.Role, error) {
+func mapRoles(dest *userQueryResult) ([]*role.Role, error) {
 	var roles []*role.Role
 	var err error
 	for _, r := range dest.Roles {
 		if r == nil {
-			break
+			continue
 		}
 		var permissions []*permission.Permission
 		for _, p := range r.Permissions {
 			if p == nil {
-				break
+				continue
 			}
 			permissions, err = appendPermission(permissions, p)
 			if err != nil {

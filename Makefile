@@ -13,7 +13,7 @@ go-tidy: # run go mod tidy for each go module
 	@./scripts/go-tidy.sh
 
 .PHONY: go-test 
-go-test: # run go unit tests each go module
+go-test: # run go unit tests for each go module
 	@./scripts/go-test.sh
 
 .PHONY: jet-identity 

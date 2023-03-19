@@ -45,6 +45,10 @@ func (r *UserMemoryRepository) Update(user *user.User) error {
 	return nil
 }
 
+func (r *UserMemoryRepository) GetAll(page, pageSize int) ([]*user.User, error) {
+	return nil, nil
+}
+
 func (r *UserMemoryRepository) GetByEmail(email string) (*user.User, error) {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
