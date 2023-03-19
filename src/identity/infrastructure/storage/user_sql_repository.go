@@ -119,8 +119,6 @@ func (r *UserSqlRepository) GetAll(page, pageSize int) ([]*user.User, error) {
 			LEFT_JOIN(RolePermissions, RolePermissions.RoleID.EQ(Roles.RoleID)).
 			LEFT_JOIN(Permissions, Permissions.PermissionID.EQ(RolePermissions.PermissionID)))
 
-	println(stmt.DebugSql())
-
 	var dest []*userQueryResult
 
 	err := stmt.Query(r.db, &dest)
@@ -249,9 +247,9 @@ func appendPermission(
 
 func appendRole(roles []*role.Role,
 	r *struct {
-		model.Roles
-		Permissions []*struct{ model.Permissions }
-	},
+	model.Roles
+	Permissions []*struct{ model.Permissions }
+},
 	permissions []*permission.Permission,
 ) ([]*role.Role, error) {
 	rl, err := role.FromDatabase(
